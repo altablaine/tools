@@ -3,89 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Global Portfolio Sync</title>
+    <title>Global Portfolio - Complete Pro</title>
     <style>
-        /* Mobile-First Design */
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 850px; margin-bottom: 15px; box-sizing: border-box; }
-        h2 { color: #1a73e8; font-size: 1.4rem; margin-bottom: 15px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 850px; margin-bottom: 15px; box-sizing: border-box; position: relative; }
+        h2 { color: #1a73e8; font-size: 1.2rem; margin: 0 0 15px 0; }
         
-        /* Responsive Input Grids */
+        .save-indicator { position: absolute; top: 20px; right: 20px; font-size: 10px; color: #34a853; font-weight: bold; background: #e6f4ea; padding: 4px 8px; border-radius: 12px; }
+        
         .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .input-full { grid-column: span 2; }
         
         label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 10px; color: #5f6368; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 16px; } /* 16px prevents iOS zoom */
+        input, select { width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
         button { cursor: pointer; font-weight: bold; border-radius: 8px; border: none; padding: 14px; transition: 0.2s; font-size: 14px; }
-        .btn-add { background: #e8f0fe; color: #1a73e8; width: 100%; margin-top: 5px; }
-        .btn-save { background: #34a853; color: white; width: 100%; display: none; }
+        .btn-add { background: #1a73e8; color: white; width: 100%; margin-top: 5px; }
+        .btn-save { background: #34a853; color: white; width: 100%; }
         .btn-calc { background: #1a73e8; color: white; width: 100%; margin-top: 15px; font-size: 16px; }
         
-        /* Account List Mobile View */
+        .collapsible-trigger { width: 100%; text-align: left; background: #f1f3f4; color: #5f6368; padding: 12px 15px; margin-top: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e0e0e0; }
+        .collapsible-content { display: none; padding: 15px 5px; border-top: 1px solid #eee; }
+        .section-open { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
+
         .account-item { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #1a73e8; }
         .acc-header { display: flex; justify-content: space-between; font-weight: bold; }
-        .acc-details { display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 8px; }
-        .action-btns { margin-top: 10px; display: flex; gap: 10px; }
         .btn-edit-small { background: #fff; border: 1px solid #1a73e8; color: #1a73e8; flex: 1; padding: 8px; }
+        .btn-remove-small { background: none; color: #d93025; font-size: 12px; flex: 1; text-align: right; }
 
-        /* Sync Section */
-        .sync-box { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
-        .sync-textarea { width: 100%; height: 60px; font-size: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; }
-
+        /* Table & Drill Down */
         .table-container { background: white; border-radius: 15px; overflow-x: auto; display: none; width: 100%; max-width: 1100px; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
-        th, td { padding: 10px; border-bottom: 1px solid #eee; }
-        
-        @media (max-width: 600px) {
-            .main-row td:nth-child(3), .main-row td:nth-child(4) { display: none; } /* Hide 'In' and 'Deduction' on small phones */
-        }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        .main-row { cursor: pointer; transition: background 0.2s; }
+        .main-row:hover { background: #f1f8ff; }
+        .details-row { display: none; background: #fafafa; }
+        .details-container { padding: 10px 15px; font-size: 11px; border-left: 3px solid #1a73e8; color: #444; }
+        .detail-line { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ddd; }
+
+        .history-list { font-size: 13px; max-height: 200px; overflow-y: auto; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .sync-textarea { width: 100%; height: 60px; font-size: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
 <div class="card">
+    <div id="saveStatus" class="save-indicator">Ready</div>
     <h2>Portfolio Navigator</h2>
+    
     <div class="setup-grid">
         <div><label>Birth</label><input type="number" id="birthYear" value="1970"></div>
         <div><label>Draw %</label><input type="number" id="drawdownRate" value="4"></div>
         <div><label>Infl %</label><input type="number" id="inflationRate" value="2.5" step="0.1"></div>
     </div>
-    
-    <div id="accountForm">
-        <h3 id="formTitle" style="font-size: 1rem;">Add Account</h3>
+
+    <button id="formTrigger" class="collapsible-trigger" onclick="toggleSection('formContent', 'formTrigger')">
+        <span id="formTitle">Add New Account</span> <span>▼</span>
+    </button>
+    <div id="formContent" class="collapsible-content">
         <div class="input-group">
             <input type="hidden" id="editIndex" value="-1">
             <div class="input-full"><label>Account Name</label><input type="text" id="accName"></div>
-            <div><label>Currency</label>
-                <select id="accCurr"><option value="GBP">GBP (£)</option><option value="USD">USD ($)</option><option value="HKD">HKD ($)</option></select>
-            </div>
+            <div><label>Currency</label><select id="accCurr"><option value="GBP">GBP (£)</option><option value="USD">USD ($)</option><option value="HKD">HKD ($)</option></select></div>
             <div><label>Balance</label><input type="number" id="accBal"></div>
             <div><label>Return %</label><input type="number" id="accRate"></div>
             <div><label>Draw Age</label><input type="number" id="accRetireAge" value="65"></div>
             <div class="input-full"><label>Monthly Saved</label><input type="number" id="accMonthly"></div>
         </div>
-        <button id="addBtn" class="btn-add" onclick="addAccount()">+ Add Account</button>
-        <button id="saveBtn" class="btn-save" onclick="saveEdit()">Save Changes</button>
+        <button id="addBtn" class="btn-add" onclick="addAccount()">+ Confirm Add</button>
+        <button id="saveBtn" class="btn-save" style="display:none;" onclick="saveEdit()">Save Changes</button>
+        <button onclick="clearForm(); toggleSection('formContent', 'formTrigger')" style="background:none; color:#666; width:100%; margin-top:10px; font-size:12px;">Cancel</button>
     </div>
 
     <div id="accountList" style="margin-top:20px;"></div>
     
-    <button class="btn-calc" onclick="calculate()">View Life Path</button>
+    <button class="btn-calc" onclick="calculate()">Project & Update History</button>
 
-    <div class="sync-box">
-        <label>Mobile Sync</label>
-        <button onclick="exportData()" style="background:#f1f3f4; width:48%;">Copy Code</button>
-        <button onclick="importData()" style="background:#f1f3f4; width:48%;">Import Code</button>
-        <textarea id="syncArea" class="sync-textarea" placeholder="Paste sync code here..."></textarea>
+    <button id="historyTrigger" class="collapsible-trigger" onclick="toggleSection('historyContent', 'historyTrigger')">
+        <span>History</span> <span>▼</span>
+    </button>
+    <div id="historyContent" class="collapsible-content">
+        <div id="historyList" class="history-list"></div>
+        <button onclick="clearHistory()" style="font-size: 10px; background: none; color: #999; padding: 5px;">Clear History</button>
+    </div>
+
+    <button id="syncTrigger" class="collapsible-trigger" onclick="toggleSection('syncContent', 'syncTrigger')">
+        <span>Sync Tools</span> <span>▼</span>
+    </button>
+    <div id="syncContent" class="collapsible-content">
+        <button onclick="exportData()" style="background:#f1f3f4; width:48%;">Copy</button>
+        <button onclick="importData()" style="background:#f1f3f4; width:48%;">Import</button>
+        <textarea id="syncArea" class="sync-textarea"></textarea>
     </div>
 </div>
 
 <div id="tableContainer" class="table-container">
     <table id="resultsTable">
         <thead>
-            <tr><th>Year/Age</th><th>In/Out</th><th>Nominal Bal</th><th>Real Power</th></tr>
+            <tr><th>Year (Age)</th><th>+/-</th><th>Nominal</th><th>Real £</th></tr>
         </thead>
         <tbody id="tableBody"></tbody>
     </table>
@@ -93,15 +110,39 @@
 
 <script>
     const STORAGE_KEY = 'MyGlobalPortfolio_FINAL';
+    const HISTORY_KEY = 'MyGlobalPortfolio_HISTORY';
     const rates = { "GBP": 1.0, "USD": 1.27, "HKD": 9.92 };
+    
     let accounts = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    
     updateList();
+    renderHistory();
+
+    function updateStatus() {
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('saveStatus').innerText = `Saved ${time}`;
+    }
+
+    function toggleSection(contentId, triggerId) {
+        const content = document.getElementById(contentId);
+        const trigger = document.getElementById(triggerId);
+        const isOpen = content.style.display === "block";
+        content.style.display = isOpen ? "none" : "block";
+        trigger.classList.toggle('section-open', !isOpen);
+    }
+
+    function toggleRow(id) {
+        const el = document.getElementById(id);
+        el.style.display = (el.style.display === 'table-row') ? 'none' : 'table-row';
+    }
 
     function addAccount() {
         if (!document.getElementById('accName').value) return alert("Enter a name");
         accounts.push(getFormData());
         saveAndRefresh();
         clearForm();
+        toggleSection('formContent', 'formTrigger');
     }
 
     function getFormData() {
@@ -125,9 +166,10 @@
         document.getElementById('accRate').value = acc.rate * 100;
         document.getElementById('accRetireAge').value = acc.retireAge;
         document.getElementById('editIndex').value = index;
-        document.getElementById('formTitle').innerText = "Edit Details";
+        document.getElementById('formTitle').innerText = "Edit: " + acc.name;
         document.getElementById('addBtn').style.display = "none";
         document.getElementById('saveBtn').style.display = "block";
+        if (document.getElementById('formContent').style.display !== "block") toggleSection('formContent', 'formTrigger');
         window.scrollTo(0,0);
     }
 
@@ -135,19 +177,22 @@
         accounts[document.getElementById('editIndex').value] = getFormData();
         saveAndRefresh();
         clearForm();
+        toggleSection('formContent', 'formTrigger');
     }
 
     function clearForm() {
-        document.querySelectorAll('#accountForm input').forEach(i => i.type !== 'hidden' ? i.value = "" : null);
+        document.querySelectorAll('#formContent input').forEach(i => i.type !== 'hidden' ? i.value = "" : null);
         document.getElementById('accRetireAge').value = "65";
-        document.getElementById('formTitle').innerText = "Add Account";
+        document.getElementById('formTitle').innerText = "Add New Account";
         document.getElementById('addBtn').style.display = "block";
         document.getElementById('saveBtn').style.display = "none";
+        document.getElementById('editIndex').value = "-1";
     }
 
     function saveAndRefresh() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
         updateList();
+        updateStatus();
     }
 
     function updateList() {
@@ -155,45 +200,52 @@
         list.innerHTML = accounts.map((a, i) => `
             <div class="account-item">
                 <div class="acc-header"><span>${a.name}</span><span>${a.currency} ${a.balance.toLocaleString()}</span></div>
-                <div class="acc-details"><span>${(a.rate*100).toFixed(1)}% Return</span><span>Draw @ Age ${a.retireAge}</span></div>
-                <div class="action-btns">
+                <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
                     <button class="btn-edit-small" onclick="editAccount(${i})">Edit</button>
-                    <button onclick="accounts.splice(${i},1); saveAndRefresh();" style="color:red; background:none;">✕ Remove</button>
+                    <button class="btn-remove-small" onclick="if(confirm('Remove?')){accounts.splice(${i},1);saveAndRefresh();}">✕</button>
                 </div>
             </div>`).join('');
     }
 
-    function exportData() {
-        const code = btoa(JSON.stringify(accounts));
-        document.getElementById('syncArea').value = code;
-        document.getElementById('syncArea').select();
-        document.execCommand('copy');
-        alert("Sync code copied to clipboard!");
+    function renderHistory() {
+        const hList = document.getElementById('historyList');
+        if (history.length === 0) { hList.innerHTML = "<em>No records.</em>"; return; }
+        hList.innerHTML = history.slice().reverse().map((entry, idx) => {
+            const prev = history[history.length - 1 - idx - 1];
+            let diffHtml = '';
+            if (prev) {
+                const diff = entry.total - prev.total;
+                diffHtml = `<span style="color:${diff >= 0 ? 'green' : 'red'}; font-size:11px;">${diff >= 0 ? '↑' : '↓'} £${Math.abs(diff).toLocaleString()}</span>`;
+            }
+            return `<div class="history-item"><span>${entry.date}</span><span>£${entry.total.toLocaleString()} ${diffHtml}</span></div>`;
+        }).join('');
     }
 
-    function importData() {
-        try {
-            const code = document.getElementById('syncArea').value;
-            accounts = JSON.parse(atob(code));
-            saveAndRefresh();
-            alert("Success! Portfolio imported.");
-        } catch(e) { alert("Invalid code."); }
-    }
+    function clearHistory() { if(confirm("Clear history?")) { history = []; localStorage.setItem(HISTORY_KEY, '[]'); renderHistory(); } }
 
     function calculate() {
-        const birthYear = parseInt(document.getElementById('birthYear').value);
-        const inflation = parseFloat(document.getElementById('inflationRate').value) / 100;
         const currentYear = new Date().getFullYear();
-        const startAge = currentYear - birthYear;
+        const startAge = currentYear - parseInt(document.getElementById('birthYear').value);
+        const inflation = parseFloat(document.getElementById('inflationRate').value) / 100;
         const drawRate = parseFloat(document.getElementById('drawdownRate').value) / 100;
         
+        let currentTotalGBP = 0;
         let tempAccs = JSON.parse(JSON.stringify(accounts));
+        tempAccs.forEach(a => currentTotalGBP += (a.balance / rates[a.currency]));
+
+        const lastEntry = history[history.length - 1];
+        if (!lastEntry || Math.round(lastEntry.total) !== Math.round(currentTotalGBP)) {
+            history.push({ date: new Date().toLocaleDateString(), total: currentTotalGBP });
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            renderHistory();
+        }
+
         const tableBody = document.getElementById('tableBody');
         tableBody.innerHTML = "";
-
         for (let y = 0; y <= (95 - startAge); y++) {
             let age = startAge + y, year = currentYear + y;
             let totalIn = 0, totalOut = 0, totalBal = 0;
+            let snapshots = [];
 
             tempAccs.forEach(a => {
                 let isRet = age >= a.retireAge, mon = isRet ? 0 : a.monthly;
@@ -203,17 +255,44 @@
                 totalIn += (mon * 12) / rates[a.currency];
                 totalOut += draw / rates[a.currency];
                 totalBal += a.balance / rates[a.currency];
+                snapshots.push({ n: a.name, b: a.balance, c: a.currency });
             });
 
+            const rid = `row-${y}`;
+            const detailLines = snapshots.map(s => `
+                <div class="detail-line"><span>${s.n}</span><span>${s.c} ${s.b.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
+            `).join('');
+
             let realBal = totalBal / Math.pow(1 + inflation, y);
-            tableBody.innerHTML += `<tr>
-                <td><b>${year}</b> (Age ${age})</td>
-                <td><small>+£${totalIn.toFixed(0)} <br> <span style="color:red">-£${totalOut.toFixed(0)}</span></small></td>
-                <td>£${totalBal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
-                <td style="color:#188038; font-weight:bold;">£${realBal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
-            </tr>`;
+            tableBody.innerHTML += `
+                <tr class="main-row" onclick="toggleRow('${rid}')">
+                    <td><b>${year}</b> (${age}) ▾</td>
+                    <td><small>+£${totalIn.toFixed(0)}<br><span style="color:red">-£${totalOut.toFixed(0)}</span></small></td>
+                    <td>£${totalBal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+                    <td style="color:#188038; font-weight:bold;">£${realBal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+                </tr>
+                <tr id="${rid}" class="details-row"><td colspan="4"><div class="details-container"><b>Breakdown:</b>${detailLines}</div></td></tr>`;
         }
         document.getElementById('tableContainer').style.display = 'block';
+        updateStatus();
+    }
+
+    function exportData() {
+        document.getElementById('syncArea').value = btoa(JSON.stringify({acc: accounts, hist: history}));
+        document.getElementById('syncArea').select();
+        document.execCommand('copy');
+        alert("Copied!");
+    }
+
+    function importData() {
+        try {
+            const data = JSON.parse(atob(document.getElementById('syncArea').value));
+            accounts = data.acc; history = data.hist;
+            saveAndRefresh();
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            renderHistory();
+            alert("Imported!");
+        } catch(e) { alert("Error."); }
     }
 </script>
 </body>
