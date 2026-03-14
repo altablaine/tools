@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Portfolio Pro - Risk Toggles</title>
+    <title>Portfolio Pro - Ultimate Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #1a73e8; --success: #34a853; --danger: #d93025; --gray: #5f6368; --bg: #f0f2f5; --warning: #fbbc04; }
@@ -22,7 +22,6 @@
         .portfolio-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f2f5; }
         .total-amount { font-size: 2.4rem; font-weight: 800; color: var(--primary); margin: 5px 0; }
         
-        /* Risk Toggle Styles */
         .risk-selector { display: flex; gap: 5px; margin-bottom: 20px; background: #f1f3f4; padding: 5px; border-radius: 10px; }
         .risk-btn { flex: 1; border: none; padding: 8px; border-radius: 7px; font-size: 11px; font-weight: bold; cursor: pointer; color: var(--gray); background: transparent; transition: 0.2s; }
         .risk-btn.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -126,11 +125,19 @@
                 </div>
 
                 <div id="syncContent" class="collapsible-content">
-                    <button class="btn-secondary" style="width:100%; margin-bottom:5px;" onclick="downloadBackup()">Download .JSON</button>
-                    <button class="btn-secondary" style="width:100%; margin-bottom:10px;" onclick="document.getElementById('fileInput').click()">Upload .JSON</button>
-                    <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)">
-                    <textarea id="syncArea" style="width:100%; height:40px; font-size:10px;"></textarea>
-                    <button class="btn-secondary" style="width:100%;" onclick="exportData()">Copy Sync Code</button>
+                    <label>File Backup</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn-secondary" style="background:#e8f0fe;" onclick="downloadBackup()">Download .JSON</button>
+                        <button class="btn-secondary" style="background:#e8f0fe;" onclick="document.getElementById('fileInput').click()">Upload .JSON</button>
+                        <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)">
+                    </div>
+                    
+                    <label>Manual Sync String</label>
+                    <textarea id="syncArea" style="width:100%; height:80px; font-size:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:10px;"></textarea>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" onclick="exportData()">Copy Code</button>
+                        <button class="btn-secondary" onclick="importData()">Import Code</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -154,7 +161,7 @@
     
     let accounts = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
-    let riskModifier = 0; // The global risk adjustment
+    let riskModifier = 0;
     let myChart, hChart;
 
     updateList();
@@ -164,7 +171,7 @@
         riskModifier = modifier;
         document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        calculate(); // Instantly update
+        calculate();
     }
 
     function toggleSection(id) {
@@ -201,7 +208,6 @@
         const drawRate = parseFloat(document.getElementById('drawdownRate').value) / 100;
         const retirementYear = birthYear + 65;
 
-        // Standard history log
         let currentTotal = 0; accounts.forEach(a => currentTotal += (a.balance / rates[a.currency]));
         const todayKey = new Date().toISOString().split('T')[0];
         const existingIdx = history.findIndex(h => h.date === todayKey);
@@ -221,10 +227,7 @@
 
             tempAccs.forEach(a => {
                 let isRet = age >= a.retireAge, mon = isRet ? 0 : a.monthly;
-                
-                // Apply Global Risk Modifier to the base account rate
                 let adjustedRate = a.rate + riskModifier;
-                
                 for (let m = 0; m < 12; m++) a.balance = (a.balance + mon) * (1 + (adjustedRate / 12));
                 
                 if (a.events) {
@@ -258,6 +261,7 @@
         document.getElementById('tableContainer').style.display = 'block';
         document.getElementById('chartCard').style.display = 'block';
         renderGrowthChart(labels, nominalData, realData, retirementYear);
+        renderHistory();
         updateTotalHeader();
     }
 
@@ -321,7 +325,8 @@
     function renderHistoryChart() { const ctx = document.getElementById('historyChart').getContext('2d'); if (hChart) hChart.destroy(); hChart = new Chart(ctx, { type: 'line', data: { labels: history.map(h => h.date), datasets: [{label: 'Total £', data: history.map(h => h.total), borderColor: '#1a73e8', fill: true, backgroundColor: 'rgba(26, 115, 232, 0.05)', tension: 0.1}] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }}}}); }
     function downloadBackup() { const data = { accounts, history }; const blob = new Blob([JSON.stringify(data)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup.json`; a.click(); }
     function handleFileUpload(e) { const reader = new FileReader(); reader.onload = ev => { const d = JSON.parse(ev.target.result); accounts = d.accounts; history = d.history; localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); updateList(); renderHistory(); }; reader.readAsText(e.target.files[0]); }
-    function exportData() { document.getElementById('syncArea').value = btoa(JSON.stringify({acc: accounts, hist: history})); }
+    function exportData() { document.getElementById('syncArea').value = btoa(JSON.stringify({acc: accounts, hist: history})); alert("Code copied to box!"); }
+    function importData() { try { const d = JSON.parse(atob(document.getElementById('syncArea').value)); accounts = d.acc; history = d.hist; localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); updateList(); renderHistory(); alert("Data Imported!"); } catch(e) { alert("Invalid Sync Code"); }}
 </script>
 </body>
 </html>
