@@ -3,146 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Global Portfolio - Pro Mobile</title>
+    <title>Portfolio Pro - Risk Toggles</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 850px; margin-bottom: 15px; box-sizing: border-box; position: relative; }
+        :root { --primary: #1a73e8; --success: #34a853; --danger: #d93025; --gray: #5f6368; --bg: #f0f2f5; --warning: #fbbc04; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 10px; color: #202124; margin: 0; }
+        .dashboard-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1300px; margin: 0 auto; }
+        .main-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; }
         
-        /* Total Portfolio Header */
+        @media (min-width: 800px) {
+            body { padding: 30px; }
+            .main-grid { grid-template-columns: 360px 1fr; align-items: start; }
+            .sidebar { position: sticky; top: 30px; }
+            .chart-card, .table-container { display: block !important; }
+        }
+
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; width: 100%; margin-bottom: 20px; }
         .portfolio-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f2f5; }
-        .portfolio-header label { font-size: 11px; color: #5f6368; letter-spacing: 1px; }
-        .total-amount { font-size: 2.2rem; font-weight: 800; color: #1a73e8; margin: 5px 0; }
-        .save-indicator { font-size: 10px; color: #34a853; font-weight: bold; background: #e6f4ea; padding: 4px 10px; border-radius: 12px; display: inline-block; }
+        .total-amount { font-size: 2.4rem; font-weight: 800; color: var(--primary); margin: 5px 0; }
         
-        h2 { color: #1a73e8; font-size: 1.2rem; margin: 0 0 15px 0; }
-        .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .input-full { grid-column: span 2; }
-        
-        label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 10px; color: #5f6368; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        
-        button { cursor: pointer; font-weight: bold; border-radius: 8px; border: none; padding: 14px; transition: 0.2s; font-size: 14px; }
-        .btn-add { background: #1a73e8; color: white; width: 100%; margin-top: 5px; }
-        .btn-save { background: #34a853; color: white; width: 100%; }
-        .btn-calc { background: #1a73e8; color: white; width: 100%; margin-top: 15px; font-size: 16px; }
-        
-        .collapsible-trigger { width: 100%; text-align: left; background: #f1f3f4; color: #5f6368; padding: 12px 15px; margin-top: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e0e0e0; }
-        .collapsible-content { display: none; padding: 15px 5px; border-top: 1px solid #eee; }
-        .section-open { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
+        /* Risk Toggle Styles */
+        .risk-selector { display: flex; gap: 5px; margin-bottom: 20px; background: #f1f3f4; padding: 5px; border-radius: 10px; }
+        .risk-btn { flex: 1; border: none; padding: 8px; border-radius: 7px; font-size: 11px; font-weight: bold; cursor: pointer; color: var(--gray); background: transparent; transition: 0.2s; }
+        .risk-btn.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .risk-btn.cons.active { color: var(--danger); }
+        .risk-btn.bal.active { color: var(--primary); }
+        .risk-btn.aggr.active { color: var(--success); }
 
-        .account-item { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #1a73e8; }
-        .acc-header { display: flex; justify-content: space-between; font-weight: bold; }
-        .btn-edit-small { background: #fff; border: 1px solid #1a73e8; color: #1a73e8; flex: 1; padding: 8px; }
-        .btn-remove-small { background: none; color: #d93025; font-size: 12px; flex: 1; text-align: right; }
+        .setup-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 12px; }
+        label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 9px; color: var(--gray); text-transform: uppercase; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
 
-        .table-container { background: white; border-radius: 15px; overflow-x: auto; display: none; width: 100%; max-width: 1100px; margin-top: 10px; }
+        .btn-calc { background: var(--primary); color: white; width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 16px; border: none; cursor: pointer; margin: 10px 0; }
+        .btn-secondary { flex: 1; font-size: 11px; background: #f1f3f4; border-radius: 8px; border: none; padding: 10px; cursor: pointer; color: var(--gray); font-weight: bold; }
+        
+        .account-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; position: relative; }
+        .acc-bal { font-weight: 700; color: var(--primary); font-size: 15px; text-align: right; flex: 1; margin-right: 10px; }
+        
+        .kebab-btn { background: none; border: none; font-size: 20px; color: #bdc1c6; cursor: pointer; }
+        .menu-options { display: none; position: absolute; right: 0; top: 40px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; z-index: 100; min-width: 140px; border: 1px solid #eee; }
+        .menu-options button { width: 100%; padding: 12px 15px; text-align: left; background: white; border: none; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f1f3f4; }
+        
+        .chart-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); height: 450px; box-sizing: border-box; display: none; }
+        .table-container { background: white; border-radius: 15px; overflow-x: auto; width: 100%; margin-top: 20px; display: none; }
+        
         table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
         th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        .main-row { cursor: pointer; transition: background 0.2s; }
-        .main-row:hover { background: #f1f8ff; }
+        .main-row { cursor: pointer; }
         .details-row { display: none; background: #fafafa; }
-        .details-container { padding: 10px 15px; font-size: 11px; border-left: 3px solid #1a73e8; color: #444; }
+        .details-container { padding: 10px 15px; border-left: 3px solid var(--primary); font-size: 11px; }
         .detail-line { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ddd; }
-
-        .history-list { font-size: 13px; max-height: 200px; overflow-y: auto; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-        .sync-textarea { width: 100%; height: 60px; font-size: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; }
+        
+        .event-tag { display: inline-block; background: #e8f0fe; color: var(--primary); padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-right: 5px; margin-top: 5px; }
+        .event-input-row { display: grid; grid-template-columns: 1fr 80px 80px 40px; gap: 5px; margin-bottom: 5px; }
+        
+        .collapsible-content { display: none; padding-top: 15px; }
+        #chartPlaceholder { color: var(--gray); text-align: center; margin-top: 150px; font-style: italic; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div class="portfolio-header">
-        <label>Total Combined Portfolio</label>
-        <div id="totalPortfolioAmount" class="total-amount">£0</div>
-        <div id="saveStatus" class="save-indicator">Ready</div>
-    </div>
+<div class="dashboard-wrapper">
+    <div class="main-grid">
+        <div class="sidebar">
+            <div class="card">
+                <div class="portfolio-header">
+                    <label>Total Net Worth</label>
+                    <div id="totalPortfolioAmount" class="total-amount">£0</div>
+                    <div id="saveStatus" style="font-size:9px; color:var(--success); font-weight:bold;">Ready</div>
+                </div>
 
-    <div class="setup-grid">
-        <div><label>Birth</label><input type="number" id="birthYear" value="1970"></div>
-        <div><label>Draw %</label><input type="number" id="drawdownRate" value="4"></div>
-        <div><label>Infl %</label><input type="number" id="inflationRate" value="2.5" step="0.1"></div>
-    </div>
+                <label>Projection Mode</label>
+                <div class="risk-selector">
+                    <button class="risk-btn cons" onclick="setRisk(-0.02, this)">CONSERVATIVE</button>
+                    <button class="risk-btn bal active" onclick="setRisk(0, this)">BALANCED</button>
+                    <button class="risk-btn aggr" onclick="setRisk(0.02, this)">AGGRESSIVE</button>
+                </div>
 
-    <button id="formTrigger" class="collapsible-trigger" onclick="toggleSection('formContent', 'formTrigger')">
-        <span id="formTitle">Add New Account</span> <span>▼</span>
-    </button>
-    <div id="formContent" class="collapsible-content">
-        <div class="input-group">
-            <input type="hidden" id="editIndex" value="-1">
-            <div class="input-full"><label>Account Name</label><input type="text" id="accName"></div>
-            <div><label>Currency</label><select id="accCurr"><option value="GBP">GBP (£)</option><option value="USD">USD ($)</option><option value="HKD">HKD ($)</option></select></div>
-            <div><label>Balance</label><input type="number" id="accBal"></div>
-            <div><label>Return %</label><input type="number" id="accRate"></div>
-            <div><label>Draw Age</label><input type="number" id="accRetireAge" value="65"></div>
-            <div class="input-full"><label>Monthly Saved</label><input type="number" id="accMonthly"></div>
+                <div class="setup-grid">
+                    <div><label>Birth</label><input type="number" id="birthYear" value="1970"></div>
+                    <div><label>Draw %</label><input type="number" id="drawdownRate" value="4"></div>
+                    <div><label>Infl %</label><input type="number" id="inflationRate" value="2.5" step="0.1"></div>
+                </div>
+
+                <div id="accountList"></div>
+
+                <button class="btn-calc" onclick="calculate()">Project Life Path</button>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-secondary" onclick="toggleSection('formContent')">+ Account</button>
+                    <button class="btn-secondary" onclick="toggleSection('historyContent'); renderHistoryChart();">History</button>
+                    <button class="btn-secondary" onclick="toggleSection('syncContent')">Sync</button>
+                </div>
+
+                <div id="formContent" class="collapsible-content">
+                    <div style="background:#f8f9fa; padding:15px; border-radius:12px;">
+                        <input type="hidden" id="editIndex" value="-1">
+                        <label>Account Name</label><input type="text" id="accName" style="margin-bottom:10px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <div><label>Curr</label><select id="accCurr"><option value="GBP">GBP (£)</option><option value="USD">USD ($)</option><option value="HKD">HKD ($)</option></select></div>
+                            <div><label>Balance</label><input type="number" id="accBal"></div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <div><label>Return %</label><input type="number" id="accRate"></div>
+                            <div><label>Draw Age</label><input type="number" id="accRetireAge" value="65"></div>
+                        </div>
+                        <label>Monthly Saved</label><input type="number" id="accMonthly" style="margin-bottom:10px;">
+                        
+                        <div style="margin-top:10px; border-top:1px solid #ddd; padding-top:10px;">
+                            <label style="color:var(--primary)">One-off Events</label>
+                            <div id="eventsList" style="margin-bottom:10px;"></div>
+                            <button onclick="addEventUI()" style="font-size:10px; background:none; border:1px solid #ccc; padding:5px; border-radius:5px; cursor:pointer;">+ Add Event</button>
+                        </div>
+
+                        <button class="btn-calc" style="background:var(--success); margin-top:20px;" onclick="saveAccount()">Save Account</button>
+                    </div>
+                </div>
+
+                <div id="historyContent" class="collapsible-content">
+                    <div style="height: 150px;"><canvas id="historyChart"></canvas></div>
+                    <div id="historyList" style="margin-top:10px; font-size:12px;"></div>
+                </div>
+
+                <div id="syncContent" class="collapsible-content">
+                    <button class="btn-secondary" style="width:100%; margin-bottom:5px;" onclick="downloadBackup()">Download .JSON</button>
+                    <button class="btn-secondary" style="width:100%; margin-bottom:10px;" onclick="document.getElementById('fileInput').click()">Upload .JSON</button>
+                    <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)">
+                    <textarea id="syncArea" style="width:100%; height:40px; font-size:10px;"></textarea>
+                    <button class="btn-secondary" style="width:100%;" onclick="exportData()">Copy Sync Code</button>
+                </div>
+            </div>
         </div>
-        <button id="addBtn" class="btn-add" onclick="addAccount()">+ Confirm Add</button>
-        <button id="saveBtn" class="btn-save" style="display:none;" onclick="saveEdit()">Save Changes</button>
-        <button onclick="clearForm(); toggleSection('formContent', 'formTrigger')" style="background:none; color:#666; width:100%; margin-top:10px; font-size:12px;">Cancel</button>
+
+        <div class="visualization">
+            <div id="chartCard" class="chart-card">
+                <div id="chartPlaceholder">Click "Project Life Path" to view growth projection...</div>
+                <canvas id="growthChart"></canvas>
+            </div>
+            <div id="tableContainer" class="table-container">
+                <table><tbody id="tableBody"></tbody></table>
+            </div>
+        </div>
     </div>
-
-    <div id="accountList" style="margin-top:20px;"></div>
-    
-    <button class="btn-calc" onclick="calculate()">Project & Update History</button>
-
-    <button id="historyTrigger" class="collapsible-trigger" onclick="toggleSection('historyContent', 'historyTrigger')">
-        <span>History</span> <span>▼</span>
-    </button>
-    <div id="historyContent" class="collapsible-content">
-        <div id="historyList" class="history-list"></div>
-        <button onclick="clearHistory()" style="font-size: 10px; background: none; color: #999; padding: 5px;">Clear History</button>
-    </div>
-
-    <button id="syncTrigger" class="collapsible-trigger" onclick="toggleSection('syncContent', 'syncTrigger')">
-        <span>Sync Tools</span> <span>▼</span>
-    </button>
-    <div id="syncContent" class="collapsible-content">
-        <button onclick="exportData()" style="background:#f1f3f4; width:48%;">Copy Code</button>
-        <button onclick="importData()" style="background:#f1f3f4; width:48%;">Import Code</button>
-        <textarea id="syncArea" class="sync-textarea"></textarea>
-    </div>
-</div>
-
-<div id="tableContainer" class="table-container">
-    <table id="resultsTable">
-        <thead>
-            <tr><th>Year (Age)</th><th>+/-</th><th>Nominal</th><th>Real £</th></tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
 </div>
 
 <script>
-    const STORAGE_KEY = 'MyGlobalPortfolio_FINAL';
-    const HISTORY_KEY = 'MyGlobalPortfolio_HISTORY';
+    const STORAGE_KEY = 'GlobalPortfolio_V4';
+    const HISTORY_KEY = 'GlobalPortfolio_HIST_V4';
     const rates = { "GBP": 1.0, "USD": 1.27, "HKD": 9.92 };
     
     let accounts = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
-    
+    let riskModifier = 0; // The global risk adjustment
+    let myChart, hChart;
+
     updateList();
-    renderHistory();
     updateTotalHeader();
 
-    function updateStatus() {
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        document.getElementById('saveStatus').innerText = `Synced ${time}`;
+    function setRisk(modifier, btn) {
+        riskModifier = modifier;
+        document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        calculate(); // Instantly update
     }
 
-    function updateTotalHeader() {
-        let totalGBP = 0;
-        accounts.forEach(a => totalGBP += (a.balance / rates[a.currency]));
-        document.getElementById('totalPortfolioAmount').innerText = `£${totalGBP.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-    }
-
-    function toggleSection(contentId, triggerId) {
-        const content = document.getElementById(contentId);
-        const trigger = document.getElementById(triggerId);
-        const isOpen = content.style.display === "block";
-        content.style.display = isOpen ? "none" : "block";
-        trigger.classList.toggle('section-open', !isOpen);
+    function toggleSection(id) {
+        const el = document.getElementById(id);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
     }
 
     function toggleRow(id) {
@@ -150,165 +177,151 @@
         el.style.display = (el.style.display === 'table-row') ? 'none' : 'table-row';
     }
 
-    function addAccount() {
-        if (!document.getElementById('accName').value) return alert("Enter a name");
-        accounts.push(getFormData());
-        saveAndRefresh();
-        clearForm();
-        toggleSection('formContent', 'formTrigger');
+    function toggleMenu(id) {
+        document.querySelectorAll('.menu-options').forEach(m => { if(m.id !== id) m.style.display = 'none'; });
+        const el = document.getElementById(id);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
     }
 
-    function getFormData() {
-        return {
-            name: document.getElementById('accName').value,
-            currency: document.getElementById('accCurr').value,
-            balance: parseFloat(document.getElementById('accBal').value) || 0,
-            monthly: parseFloat(document.getElementById('accMonthly').value) || 0,
-            rate: (parseFloat(document.getElementById('accRate').value) || 0) / 100,
-            retireAge: parseInt(document.getElementById('accRetireAge').value) || 65,
-            lastUpdated: new Date().toLocaleDateString()
-        };
+    function addEventUI(name = '', amount = '', age = '') {
+        const container = document.getElementById('eventsList');
+        const div = document.createElement('div');
+        div.className = 'event-input-row';
+        div.innerHTML = `<input type="text" placeholder="Name" value="${name}" class="ev-name"><input type="number" placeholder="Amt" value="${amount}" class="ev-amt"><input type="number" placeholder="Age" value="${age}" class="ev-age"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">✕</button>`;
+        container.appendChild(div);
     }
-
-    function editAccount(index) {
-        const acc = accounts[index];
-        document.getElementById('accName').value = acc.name;
-        document.getElementById('accCurr').value = acc.currency;
-        document.getElementById('accBal').value = acc.balance;
-        document.getElementById('accMonthly').value = acc.monthly;
-        document.getElementById('accRate').value = acc.rate * 100;
-        document.getElementById('accRetireAge').value = acc.retireAge;
-        document.getElementById('editIndex').value = index;
-        document.getElementById('formTitle').innerText = "Edit: " + acc.name;
-        document.getElementById('addBtn').style.display = "none";
-        document.getElementById('saveBtn').style.display = "block";
-        if (document.getElementById('formContent').style.display !== "block") toggleSection('formContent', 'formTrigger');
-        window.scrollTo(0,0);
-    }
-
-    function saveEdit() {
-        accounts[document.getElementById('editIndex').value] = getFormData();
-        saveAndRefresh();
-        clearForm();
-        toggleSection('formContent', 'formTrigger');
-    }
-
-    function clearForm() {
-        document.querySelectorAll('#formContent input').forEach(i => i.type !== 'hidden' ? i.value = "" : null);
-        document.getElementById('accRetireAge').value = "65";
-        document.getElementById('formTitle').innerText = "Add New Account";
-        document.getElementById('addBtn').style.display = "block";
-        document.getElementById('saveBtn').style.display = "none";
-        document.getElementById('editIndex').value = "-1";
-    }
-
-    function saveAndRefresh() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
-        updateList();
-        updateStatus();
-        updateTotalHeader();
-    }
-
-    function updateList() {
-        const list = document.getElementById('accountList');
-        list.innerHTML = accounts.map((a, i) => `
-            <div class="account-item">
-                <div class="acc-header"><span>${a.name}</span><span>${a.currency} ${a.balance.toLocaleString()}</span></div>
-                <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
-                    <button class="btn-edit-small" onclick="editAccount(${i})">Edit</button>
-                    <button class="btn-remove-small" onclick="if(confirm('Remove?')){accounts.splice(${i},1);saveAndRefresh();}">✕</button>
-                </div>
-            </div>`).join('');
-    }
-
-    function renderHistory() {
-        const hList = document.getElementById('historyList');
-        if (history.length === 0) { hList.innerHTML = "<em>No records.</em>"; return; }
-        hList.innerHTML = history.slice().reverse().map((entry, idx) => {
-            const prev = history[history.length - 1 - idx - 1];
-            let diffHtml = '';
-            if (prev) {
-                const diff = entry.total - prev.total;
-                diffHtml = `<span style="color:${diff >= 0 ? 'green' : 'red'}; font-size:11px;">${diff >= 0 ? '↑' : '↓'} £${Math.abs(diff).toLocaleString()}</span>`;
-            }
-            return `<div class="history-item"><span>${entry.date}</span><span>£${entry.total.toLocaleString()} ${diffHtml}</span></div>`;
-        }).join('');
-    }
-
-    function clearHistory() { if(confirm("Clear history?")) { history = []; localStorage.setItem(HISTORY_KEY, '[]'); renderHistory(); } }
 
     function calculate() {
+        if (!document.getElementById('chartCard')) return;
+        document.getElementById('chartPlaceholder').style.display = 'none';
         const currentYear = new Date().getFullYear();
-        const startAge = currentYear - parseInt(document.getElementById('birthYear').value);
+        const birthYear = parseInt(document.getElementById('birthYear').value);
+        const startAge = currentYear - birthYear;
         const inflation = parseFloat(document.getElementById('inflationRate').value) / 100;
         const drawRate = parseFloat(document.getElementById('drawdownRate').value) / 100;
-        
-        let currentTotalGBP = 0;
+        const retirementYear = birthYear + 65;
+
+        // Standard history log
+        let currentTotal = 0; accounts.forEach(a => currentTotal += (a.balance / rates[a.currency]));
+        const todayKey = new Date().toISOString().split('T')[0];
+        const existingIdx = history.findIndex(h => h.date === todayKey);
+        if(existingIdx > -1) { history[existingIdx].total = currentTotal; } else { history.push({ date: todayKey, total: currentTotal }); }
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+
         let tempAccs = JSON.parse(JSON.stringify(accounts));
-        tempAccs.forEach(a => currentTotalGBP += (a.balance / rates[a.currency]));
-
-        const lastEntry = history[history.length - 1];
-        if (!lastEntry || Math.round(lastEntry.total) !== Math.round(currentTotalGBP)) {
-            history.push({ date: new Date().toLocaleDateString(), total: currentTotalGBP });
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-            renderHistory();
-        }
-
+        let labels = [], nominalData = [], realData = [];
         const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = "";
+        tableBody.innerHTML = `<tr style="background:#f8f9fa;"><th>Year (Age)</th><th>Cash Flow</th><th>Nominal</th><th>Real Power</th></tr>`;
+
         for (let y = 0; y <= (95 - startAge); y++) {
-            let age = startAge + y, year = currentYear + y;
+            let year = currentYear + y, age = startAge + y;
             let totalIn = 0, totalOut = 0, totalBal = 0;
             let snapshots = [];
+            let activeEvents = [];
 
             tempAccs.forEach(a => {
                 let isRet = age >= a.retireAge, mon = isRet ? 0 : a.monthly;
-                for (let m = 0; m < 12; m++) a.balance = (a.balance + mon) * (1 + (a.rate / 12));
+                
+                // Apply Global Risk Modifier to the base account rate
+                let adjustedRate = a.rate + riskModifier;
+                
+                for (let m = 0; m < 12; m++) a.balance = (a.balance + mon) * (1 + (adjustedRate / 12));
+                
+                if (a.events) {
+                    a.events.forEach(ev => {
+                        if (parseInt(ev.age) === age) {
+                            a.balance += parseFloat(ev.amount) * Math.pow(1 + inflation, y);
+                            activeEvents.push(`${ev.name}: ${parseFloat(ev.amount).toLocaleString()}`);
+                        }
+                    });
+                }
+
                 let draw = isRet ? a.balance * drawRate : 0;
                 if (isRet) a.balance -= draw;
+                
                 totalIn += (mon * 12) / rates[a.currency];
                 totalOut += draw / rates[a.currency];
                 totalBal += a.balance / rates[a.currency];
                 snapshots.push({ n: a.name, b: a.balance, c: a.currency });
             });
 
+            let realVal = totalBal / Math.pow(1 + inflation, y);
+            labels.push(year); nominalData.push(Math.round(totalBal)); realData.push(Math.round(realVal));
+            
             const rid = `row-${y}`;
-            const detailLines = snapshots.map(s => `
-                <div class="detail-line"><span>${s.n}</span><span>${s.c} ${s.b.toLocaleString(undefined,{maximumFractionDigits:0})}</span></div>
-            `).join('');
+            const detailLines = snapshots.map(s => `<div class="detail-line"><span>${s.n}</span><span>${s.c} ${Math.round(s.b).toLocaleString()}</span></div>`).join('');
+            const eventTags = activeEvents.map(e => `<span class="event-tag">${e}</span>`).join('');
+            let cf = age < 65 ? `<span style="color:var(--success)">+£${Math.round(totalIn).toLocaleString()}</span>` : `<span style="color:var(--danger)">-£${Math.round(totalOut).toLocaleString()}</span>`;
 
-            let realBal = totalBal / Math.pow(1 + inflation, y);
-            tableBody.innerHTML += `
-                <tr class="main-row" onclick="toggleRow('${rid}')">
-                    <td><b>${year}</b> (${age}) ▾</td>
-                    <td><small>+£${totalIn.toFixed(0)}<br><span style="color:red">-£${totalOut.toFixed(0)}</span></small></td>
-                    <td>£${totalBal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
-                    <td style="color:#188038; font-weight:bold;">£${realBal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
-                </tr>
-                <tr id="${rid}" class="details-row"><td colspan="4"><div class="details-container"><b>Breakdown:</b>${detailLines}</div></td></tr>`;
+            tableBody.innerHTML += `<tr class="main-row" onclick="toggleRow('${rid}')" style="${year === retirementYear ? 'background:#fff8e1;' : ''}"><td><b>${year}</b> (${age}) ▾</td><td><small>${cf}</small><br>${eventTags}</td><td>£${Math.round(totalBal).toLocaleString()}</td><td style="color:var(--success); font-weight:bold;">£${Math.round(realVal).toLocaleString()}</td></tr><tr id="${rid}" class="details-row"><td colspan="4"><div class="details-container"><b>Breakdown:</b>${detailLines}</div></td></tr>`;
         }
         document.getElementById('tableContainer').style.display = 'block';
-        updateStatus();
+        document.getElementById('chartCard').style.display = 'block';
+        renderGrowthChart(labels, nominalData, realData, retirementYear);
         updateTotalHeader();
     }
 
-    function exportData() {
-        document.getElementById('syncArea').value = btoa(JSON.stringify({acc: accounts, hist: history}));
-        document.getElementById('syncArea').select();
-        document.execCommand('copy');
-        alert("Copied to clipboard!");
+    function saveAccount() {
+        const events = [];
+        document.querySelectorAll('.event-input-row').forEach(row => {
+            const name = row.querySelector('.ev-name').value;
+            const amount = row.querySelector('.ev-amt').value;
+            const age = row.querySelector('.ev-age').value;
+            if (name && amount && age) events.push({ name, amount: parseFloat(amount), age: parseInt(age) });
+        });
+        const data = {
+            name: document.getElementById('accName').value,
+            currency: document.getElementById('accCurr').value,
+            balance: parseFloat(document.getElementById('accBal').value) || 0,
+            monthly: parseFloat(document.getElementById('accMonthly').value) || 0,
+            rate: (parseFloat(document.getElementById('accRate').value) || 0) / 100,
+            retireAge: parseInt(document.getElementById('accRetireAge').value) || 65,
+            events: events
+        };
+        const idx = parseInt(document.getElementById('editIndex').value);
+        if(idx > -1) accounts[idx] = data; else accounts.push(data);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+        updateList(); updateTotalHeader(); clearForm(); toggleSection('formContent');
     }
 
-    function importData() {
-        try {
-            const data = JSON.parse(atob(document.getElementById('syncArea').value));
-            accounts = data.acc; history = data.hist;
-            saveAndRefresh();
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-            renderHistory();
-            alert("Imported!");
-        } catch(e) { alert("Error."); }
+    function editAccount(i) {
+        const a = accounts[i];
+        document.getElementById('accName').value = a.name;
+        document.getElementById('accCurr').value = a.currency;
+        document.getElementById('accBal').value = a.balance;
+        document.getElementById('accRate').value = a.rate * 100;
+        document.getElementById('accRetireAge').value = a.retireAge;
+        document.getElementById('accMonthly').value = a.monthly;
+        document.getElementById('editIndex').value = i;
+        document.getElementById('eventsList').innerHTML = '';
+        if (a.events) a.events.forEach(ev => addEventUI(ev.name, ev.amount, ev.age));
+        if (document.getElementById('formContent').style.display !== 'block') toggleSection('formContent');
+        window.scrollTo(0,0);
     }
+
+    function renderGrowthChart(l, n, r, retirementYear) {
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: l, datasets: [{ label: 'Nominal', data: n, borderColor: '#1a73e8', pointRadius: 0, tension: 0.2 }, { label: 'Real Power', data: r, borderColor: '#34a853', pointRadius: 0, tension: 0.2 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { callback: v => '£' + (v / 1000).toFixed(0) + 'k' } } } },
+            plugins: [{ beforeDraw: chart => { const {ctx, chartArea: {top, bottom, left, right}, scales: {x}} = chart; const xPos = x.getPixelForValue(retirementYear); if (xPos >= left && xPos <= right) { ctx.save(); ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.moveTo(xPos, top); ctx.lineTo(xPos, bottom); ctx.lineWidth = 2; ctx.strokeStyle = '#fbc02d'; ctx.stroke(); ctx.fillStyle = '#fbc02d'; ctx.font = 'bold 10px sans-serif'; ctx.fillText('RETIRE (65)', xPos + 5, top + 15); ctx.restore(); } } }]
+        });
+    }
+
+    function updateList() {
+        const list = document.getElementById('accountList');
+        list.innerHTML = accounts.map((a, i) => `<div class="account-item"><div class="acc-info"><div class="acc-name">${a.name}</div><div style="font-size:10px; color:var(--gray);">${a.currency} · ${a.events ? a.events.length : 0} Events</div></div><div class="acc-bal">${a.currency} ${Math.round(a.balance).toLocaleString()}</div><button class="kebab-btn" onclick="toggleMenu('menu-${i}')">⋮</button><div id="menu-${i}" class="menu-options"><button onclick="editAccount(${i})">Edit</button><button style="color:var(--danger)" onclick="confirmRemove(${i})">Remove</button></div></div>`).join('');
+    }
+    function confirmRemove(i) { if(confirm(`Remove ${accounts[i].name}?`)) { accounts.splice(i,1); localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); updateList(); updateTotalHeader(); } }
+    function clearForm() { document.querySelectorAll('#formContent input').forEach(i => i.type !== 'hidden' ? i.value = "" : null); document.getElementById('eventsList').innerHTML = ''; document.getElementById('editIndex').value = "-1"; }
+    function updateTotalHeader() { let t = 0; accounts.forEach(a => t += (a.balance / rates[a.currency])); document.getElementById('totalPortfolioAmount').innerText = "£" + Math.round(t).toLocaleString(); }
+    function renderHistory() { document.getElementById('historyList').innerHTML = history.slice().reverse().map(h => `<div class="history-item"><span>${h.date}</span><span>£${Math.round(h.total).toLocaleString()}</span></div>`).join(''); }
+    function renderHistoryChart() { const ctx = document.getElementById('historyChart').getContext('2d'); if (hChart) hChart.destroy(); hChart = new Chart(ctx, { type: 'line', data: { labels: history.map(h => h.date), datasets: [{label: 'Total £', data: history.map(h => h.total), borderColor: '#1a73e8', fill: true, backgroundColor: 'rgba(26, 115, 232, 0.05)', tension: 0.1}] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }}}}); }
+    function downloadBackup() { const data = { accounts, history }; const blob = new Blob([JSON.stringify(data)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup.json`; a.click(); }
+    function handleFileUpload(e) { const reader = new FileReader(); reader.onload = ev => { const d = JSON.parse(ev.target.result); accounts = d.accounts; history = d.history; localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); updateList(); renderHistory(); }; reader.readAsText(e.target.files[0]); }
+    function exportData() { document.getElementById('syncArea').value = btoa(JSON.stringify({acc: accounts, hist: history})); }
 </script>
 </body>
 </html>
