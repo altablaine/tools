@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Global Portfolio Sync</title>
+    <style>
+        /* Mobile-First Design */
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 850px; margin-bottom: 15px; box-sizing: border-box; }
+        h2 { color: #1a73e8; font-size: 1.4rem; margin-bottom: 15px; }
+        
+        /* Responsive Input Grids */
+        .setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .input-full { grid-column: span 2; }
+        
+        label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 10px; color: #5f6368; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 16px; } /* 16px prevents iOS zoom */
+        
+        button { cursor: pointer; font-weight: bold; border-radius: 8px; border: none; padding: 14px; transition: 0.2s; font-size: 14px; }
+        .btn-add { background: #e8f0fe; color: #1a73e8; width: 100%; margin-top: 5px; }
+        .btn-save { background: #34a853; color: white; width: 100%; display: none; }
+        .btn-calc { background: #1a73e8; color: white; width: 100%; margin-top: 15px; font-size: 16px; }
+        
+        /* Account List Mobile View */
+        .account-item { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #1a73e8; }
+        .acc-header { display: flex; justify-content: space-between; font-weight: bold; }
+        .acc-details { display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 8px; }
+        .action-btns { margin-top: 10px; display: flex; gap: 10px; }
+        .btn-edit-small { background: #fff; border: 1px solid #1a73e8; color: #1a73e8; flex: 1; padding: 8px; }
+
+        /* Sync Section */
+        .sync-box { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+        .sync-textarea { width: 100%; height: 60px; font-size: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; }
+
+        .table-container { background: white; border-radius: 15px; overflow-x: auto; display: none; width: 100%; max-width: 1100px; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; }
+        
+        @media (max-width: 600px) {
+            .main-row td:nth-child(3), .main-row td:nth-child(4) { display: none; } /* Hide 'In' and 'Deduction' on small phones */
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Portfolio Navigator</h2>
+    <div class="setup-grid">
+        <div><label>Birth</label><input type="number" id="birthYear" value="1970"></div>
+        <div><label>Draw %</label><input type="number" id="drawdownRate" value="4"></div>
+        <div><label>Infl %</label><input type="number" id="inflationRate" value="2.5" step="0.1"></div>
+    </div>
+    
+    <div id="accountForm">
+        <h3 id="formTitle" style="font-size: 1rem;">Add Account</h3>
+        <div class="input-group">
+            <input type="hidden" id="editIndex" value="-1">
+            <div class="input-full"><label>Account Name</label><input type="text" id="accName"></div>
+            <div><label>Currency</label>
+                <select id="accCurr"><option value="GBP">GBP (£)</option><option value="USD">USD ($)</option><option value="HKD">HKD ($)</option></select>
+            </div>
+            <div><label>Balance</label><input type="number" id="accBal"></div>
+            <div><label>Return %</label><input type="number" id="accRate"></div>
+            <div><label>Draw Age</label><input type="number" id="accRetireAge" value="65"></div>
+            <div class="input-full"><label>Monthly Saved</label><input type="number" id="accMonthly"></div>
+        </div>
+        <button id="addBtn" class="btn-add" onclick="addAccount()">+ Add Account</button>
+        <button id="saveBtn" class="btn-save" onclick="saveEdit()">Save Changes</button>
+    </div>
+
+    <div id="accountList" style="margin-top:20px;"></div>
+    
+    <button class="btn-calc" onclick="calculate()">View Life Path</button>
+
+    <div class="sync-box">
+        <label>Mobile Sync</label>
+        <button onclick="exportData()" style="background:#f1f3f4; width:48%;">Copy Code</button>
+        <button onclick="importData()" style="background:#f1f3f4; width:48%;">Import Code</button>
+        <textarea id="syncArea" class="sync-textarea" placeholder="Paste sync code here..."></textarea>
+    </div>
+</div>
+
+<div id="tableContainer" class="table-container">
+    <table id="resultsTable">
+        <thead>
+            <tr><th>Year/Age</th><th>In/Out</th><th>Nominal Bal</th><th>Real Power</th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    const STORAGE_KEY = 'MyGlobalPortfolio_FINAL';
+    const rates = { "GBP": 1.0, "USD": 1.27, "HKD": 9.92 };
+    let accounts = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    updateList();
+
+    function addAccount() {
+        if (!document.getElementById('accName').value) return alert("Enter a name");
+        accounts.push(getFormData());
+        saveAndRefresh();
+        clearForm();
+    }
+
+    function getFormData() {
+        return {
+            name: document.getElementById('accName').value,
+            currency: document.getElementById('accCurr').value,
+            balance: parseFloat(document.getElementById('accBal').value) || 0,
+            monthly: parseFloat(document.getElementById('accMonthly').value) || 0,
+            rate: (parseFloat(document.getElementById('accRate').value) || 0) / 100,
+            retireAge: parseInt(document.getElementById('accRetireAge').value) || 65,
+            lastUpdated: new Date().toLocaleDateString()
+        };
+    }
+
+    function editAccount(index) {
+        const acc = accounts[index];
+        document.getElementById('accName').value = acc.name;
+        document.getElementById('accCurr').value = acc.currency;
+        document.getElementById('accBal').value = acc.balance;
+        document.getElementById('accMonthly').value = acc.monthly;
+        document.getElementById('accRate').value = acc.rate * 100;
+        document.getElementById('accRetireAge').value = acc.retireAge;
+        document.getElementById('editIndex').value = index;
+        document.getElementById('formTitle').innerText = "Edit Details";
+        document.getElementById('addBtn').style.display = "none";
+        document.getElementById('saveBtn').style.display = "block";
+        window.scrollTo(0,0);
+    }
+
+    function saveEdit() {
+        accounts[document.getElementById('editIndex').value] = getFormData();
+        saveAndRefresh();
+        clearForm();
+    }
+
+    function clearForm() {
+        document.querySelectorAll('#accountForm input').forEach(i => i.type !== 'hidden' ? i.value = "" : null);
+        document.getElementById('accRetireAge').value = "65";
+        document.getElementById('formTitle').innerText = "Add Account";
+        document.getElementById('addBtn').style.display = "block";
+        document.getElementById('saveBtn').style.display = "none";
+    }
+
+    function saveAndRefresh() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+        updateList();
+    }
+
+    function updateList() {
+        const list = document.getElementById('accountList');
+        list.innerHTML = accounts.map((a, i) => `
+            <div class="account-item">
+                <div class="acc-header"><span>${a.name}</span><span>${a.currency} ${a.balance.toLocaleString()}</span></div>
+                <div class="acc-details"><span>${(a.rate*100).toFixed(1)}% Return</span><span>Draw @ Age ${a.retireAge}</span></div>
+                <div class="action-btns">
+                    <button class="btn-edit-small" onclick="editAccount(${i})">Edit</button>
+                    <button onclick="accounts.splice(${i},1); saveAndRefresh();" style="color:red; background:none;">✕ Remove</button>
+                </div>
+            </div>`).join('');
+    }
+
+    function exportData() {
+        const code = btoa(JSON.stringify(accounts));
+        document.getElementById('syncArea').value = code;
+        document.getElementById('syncArea').select();
+        document.execCommand('copy');
+        alert("Sync code copied to clipboard!");
+    }
+
+    function importData() {
+        try {
+            const code = document.getElementById('syncArea').value;
+            accounts = JSON.parse(atob(code));
+            saveAndRefresh();
+            alert("Success! Portfolio imported.");
+        } catch(e) { alert("Invalid code."); }
+    }
+
+    function calculate() {
+        const birthYear = parseInt(document.getElementById('birthYear').value);
+        const inflation = parseFloat(document.getElementById('inflationRate').value) / 100;
+        const currentYear = new Date().getFullYear();
+        const startAge = currentYear - birthYear;
+        const drawRate = parseFloat(document.getElementById('drawdownRate').value) / 100;
+        
+        let tempAccs = JSON.parse(JSON.stringify(accounts));
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = "";
+
+        for (let y = 0; y <= (95 - startAge); y++) {
+            let age = startAge + y, year = currentYear + y;
+            let totalIn = 0, totalOut = 0, totalBal = 0;
+
+            tempAccs.forEach(a => {
+                let isRet = age >= a.retireAge, mon = isRet ? 0 : a.monthly;
+                for (let m = 0; m < 12; m++) a.balance = (a.balance + mon) * (1 + (a.rate / 12));
+                let draw = isRet ? a.balance * drawRate : 0;
+                if (isRet) a.balance -= draw;
+                totalIn += (mon * 12) / rates[a.currency];
+                totalOut += draw / rates[a.currency];
+                totalBal += a.balance / rates[a.currency];
+            });
+
+            let realBal = totalBal / Math.pow(1 + inflation, y);
+            tableBody.innerHTML += `<tr>
+                <td><b>${year}</b> (Age ${age})</td>
+                <td><small>+£${totalIn.toFixed(0)} <br> <span style="color:red">-£${totalOut.toFixed(0)}</span></small></td>
+                <td>£${totalBal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+                <td style="color:#188038; font-weight:bold;">£${realBal.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+            </tr>`;
+        }
+        document.getElementById('tableContainer').style.display = 'block';
+    }
+</script>
+</body>
+</html>
