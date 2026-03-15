@@ -1,6 +1,6 @@
-# Portfolio Pro (invest.html)
+# Portfolio Pro
 
-A lightweight retirement prediction tool built as a single HTML file (`invest.html`). It lets you model savings, pension income, and withdrawal scenarios to estimate how your portfolio behaves over time and whether it can support your desired post-retirement income.
+A lightweight retirement prediction tool built with HTML, CSS, and JavaScript. It lets you model savings, pension income, and withdrawal scenarios to estimate how your portfolio behaves over time and whether it can support your desired post-retirement income.
 
 ---
 
@@ -72,7 +72,16 @@ After clicking **Project Life Path**, the tool renders:
 
 ---
 
-## 💾 Persistence & Data Sync
+## � File Structure
+
+The app is organized into three files for better maintainability:
+- **`invest.html`** — Main HTML structure and layout.
+- **`styles.css`** — All CSS styles for the UI.
+- **`app.js`** — JavaScript logic for calculations, data handling, and interactions.
+
+---
+
+## �💾 Persistence & Data Sync
 
 Data is saved automatically in the browser via `localStorage`.
 
@@ -91,7 +100,13 @@ You can also:
 
 ---
 
-## 🛠 Notes / Tips
+## � Dependencies
+
+- **Chart.js** (loaded from CDN for charting) — No local installation needed.
+
+---
+
+## �🛠 Notes / Tips
 
 - The model assumes monthly compounding on the selected annual growth rate.
 - Withdrawals are taken at the end of each year after growth is applied.
