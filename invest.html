@@ -46,6 +46,7 @@
                     <div><label>Birth Year</label><input type="number" id="birthYear" value="1970"></div>
                     <div><label>Inflation %</label><input type="number" id="inflationRate" value="2.5" step="0.1"></div>
                     <div><label>Safe Draw %</label><input type="number" id="drawdownRate" value="4"></div>
+                    <div><label>Life Expectancy</label><input type="number" id="lifeExpectancy" value="95"></div>
                     <div style="background: #fff0f0; padding: 5px; border-radius: 8px; border: 1px solid #fad2cf;">
                         <label style="color: #c5221f;">Req /mo (Adjusted)</label>
                         <input type="number" id="realRequirement" value="6000" step="1000">
@@ -108,6 +109,38 @@
                         <div style="display:flex; gap:5px;">
                             <button class="btn-secondary" onclick="exportData()">Copy</button>
                             <button class="btn-secondary" onclick="importData()">Import</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <button class="btn-secondary" onclick="toggleSection('monteCarloContent')">Monte Carlo</button>
+                </div>
+
+                <div id="monteCarloContent" class="collapsible-content">
+                    <div style="background:#f8f9fa; padding:15px; border-radius:12px;">
+                        <label style="display:flex; align-items:center; gap:8px; text-transform:none; margin-bottom:10px;"><input type="checkbox" id="enableMC" onchange="toggleMC()"> Enable Monte Carlo Simulations</label>
+                        <div id="mcInputs" style="display:none;">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                                <div><label>Simulations</label><input type="number" id="numSims" value="1000" min="100" max="10000"></div>
+                                <div><label>Volatility %</label><input type="number" id="volatility" value="12" step="0.1"></div>
+                            </div>
+                            <div style="margin-bottom:10px;"><label>Confidence %</label><input type="number" id="confidence" value="95" min="80" max="99"></div>
+                            <button class="btn-calc" onclick="runMonteCarlo()" style="background:#34a853;">Run Simulations</button>
+                        </div>
+                        <div id="mcResults" style="margin-top:10px; display:none;">
+                            <div><strong>Success Rate:</strong> <span id="successRate">0%</span></div>
+                            <div><strong>Avg Ending Balance:</strong> <span id="avgBalance">£0</span></div>
+                            <div><strong>Max Ending Balance:</strong> <span id="maxBalance">£0</span></div>
+                            <div><strong>Min Ending Balance:</strong> <span id="minBalance">£0</span></div>
+                            <div><strong>Risk of Income Shortfall:</strong> <span id="riskIncomeShortfall">0%</span></div>
+                            <div><strong>Risk of Portfolio Depletion:</strong> <span id="riskDepletion">0%</span></div>
+                        </div>
+                        <div id="mcCharts" style="display:none; margin-top:20px;">
+                            <h4>Ending Balance Distribution</h4>
+                            <canvas id="mcHistogram" width="400" height="200"></canvas>
+                            <h4>Cumulative Probability</h4>
+                            <canvas id="mcProbability" width="400" height="200"></canvas>
                         </div>
                     </div>
                 </div>

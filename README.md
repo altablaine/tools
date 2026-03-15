@@ -1,12 +1,12 @@
 # Portfolio Pro
 
-A lightweight retirement prediction tool built with HTML, CSS, and JavaScript. It lets you model savings, pension income, and withdrawal scenarios to estimate how your portfolio behaves over time and whether it can support your desired post-retirement income.
+A lightweight retirement prediction tool built with HTML, CSS, and JavaScript. It lets you model savings, pension income, and withdrawal scenarios to estimate how your portfolio behaves over time and whether it can support your desired post-retirement income. Features Monte Carlo simulations for risk analysis with visual charts.
 
 ---
 
 ## ✅ What it does
 
-- Projects a **year-by-year retirement forecast** from today up to age 95.
+- Projects a **year-by-year retirement forecast** from today up to your configured life expectancy.
 - Shows both **nominal portfolio value** and **inflation-adjusted value**.
 - Calculates income from:
   - **Periodic withdrawals** (using a configurable safe withdrawal rate)
@@ -17,6 +17,7 @@ A lightweight retirement prediction tool built with HTML, CSS, and JavaScript. I
   - Pension income streams
   - Historical balance points (for plotting logged progress)
 - Persists your data automatically using **localStorage**.
+- **Monte Carlo simulations** for probabilistic risk analysis with visual charts.
 
 ---
 
@@ -24,6 +25,7 @@ A lightweight retirement prediction tool built with HTML, CSS, and JavaScript. I
 
 ### Core assumptions
 - **Retire age scenario** (target age for full withdrawal)
+- **Life expectancy** (how long to project, default 95)
 - **Inflation %**
 - **Safe withdrawal %**
 - **Annual requirement (real)** — monthly requirement is annualized internally
@@ -36,6 +38,12 @@ You can select a growth rate to model different portfolio return assumptions.
 - **Aggr** (Aggressive)
 
 Each scenario has its own expected annual return rate that you can adjust.
+
+### Monte Carlo simulations (optional)
+For advanced risk analysis, enable Monte Carlo to run probabilistic simulations:
+- **Number of simulations**: 100-10,000 (default 1,000)
+- **Volatility %**: Market volatility (default 12%)
+- Outputs: Success rate, average/max/min ending balances, risk of income shortfall, risk of portfolio depletion, distribution charts
 
 ---
 
@@ -72,6 +80,11 @@ After clicking **Project Life Path**, the tool renders:
   - Account balances
 
 All amounts are displayed in the selected display currency (GBP or USD).
+
+**Monte Carlo simulations** provide probabilistic analysis with:
+- **Text Summary**: Success rate, average/max/min ending balances, risk of income shortfall, risk of portfolio depletion
+- **Distribution Histogram**: Bar chart showing frequency of different ending balances
+- **Cumulative Probability Curve**: Line chart showing likelihood of achieving certain balances
 
 ---
 
@@ -112,8 +125,10 @@ You can also:
 
 - The model assumes monthly compounding on the selected annual growth rate.
 - Withdrawals are taken at the end of each year after growth is applied.
-- Inflation is applied to the “real” (inflation-adjusted) required income and pot values.
-- To reset, either clear your browser’s local storage for this page or remove saved accounts/pensions in the UI and save.
+- Inflation is applied to the “real” (inflation-adjusted) required income and pot values.- Projections run from current age to your configured life expectancy (default 95).
+- Monte Carlo success requires both sufficient income throughout retirement AND ending with money remaining.
+- Risk of Income Shortfall measures scenarios where income drops below requirements (but money may remain).
+- Risk of Portfolio Depletion measures scenarios where the portfolio is completely exhausted.- To reset, either clear your browser’s local storage for this page or remove saved accounts/pensions in the UI and save.
 
 ---
 

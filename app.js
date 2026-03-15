@@ -9,6 +9,11 @@ let history = JSON.parse(localStorage.getItem(HIST_KEY)) || [];
 let activeScenarioType = 'bal';
 let myChart;
 let displayCurrency = 'GBP';
+let mcHistogramChart = null;
+let mcProbabilityChart = null;
+let numSims = 1000;
+let volatility = 0.12;
+let confidence = 0.95;
 
 async function fetchExchangeRates() {
     try {
@@ -49,8 +54,176 @@ function changeDisplayCurrency(curr) {
     calculate();
 }
 
+function toggleMC() {
+    monteCarloEnabled = document.getElementById('enableMC').checked;
+    document.getElementById('mcInputs').style.display = monteCarloEnabled ? 'block' : 'none';
+    document.getElementById('mcResults').style.display = 'none';
+    document.getElementById('mcCharts').style.display = 'none';
+}
+
+function randomNormal(mean = 0, std = 1) {
+    let u = 0, v = 0;
+    while(u === 0) u = Math.random();
+    while(v === 0) v = Math.random();
+    return mean + std * Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function runMonteCarlo() {
+    if (!monteCarloEnabled) return;
+    numSims = parseInt(document.getElementById('numSims').value) || 1000;
+    volatility = parseFloat(document.getElementById('volatility').value) / 100 || 0.12;
+    confidence = parseFloat(document.getElementById('confidence').value) / 100 || 0.95;
+
+    const currentYear = new Date().getFullYear();
+    const birthYear = parseInt(document.getElementById('birthYear').value);
+    const startAge = currentYear - birthYear;
+    const inflation = parseFloat(document.getElementById('inflationRate').value) / 100;
+    const drawRate = parseFloat(document.getElementById('drawdownRate').value) / 100;
+    const realReqAnnual = parseFloat(document.getElementById('realRequirement').value) * 12;
+    const scenarioAge = parseInt(document.getElementById('scenarioRetireAge').value);
+    const lifeExp = parseInt(document.getElementById('lifeExpectancy').value) || 95;
+    const activeRate = (parseFloat(document.getElementById('rate-' + activeScenarioType).value) || 6) / 100;
+
+    let successes = 0;
+    let endingBalances = [];
+    let incomeFailures = 0;
+    let depletionFailures = 0;
+
+    for (let sim = 0; sim < numSims; sim++) {
+        let tempAccs = JSON.parse(JSON.stringify(accounts));
+        let simSuccess = true;
+
+        for (let y = 0; y <= (lifeExp - startAge); y++) {
+            let age = startAge + y;
+            let n_Dist = 0;
+
+            pensions.forEach(p => {
+                if (age >= p.age) {
+                    let gbpPenNom = (p.amount / rates[p.currency]) * Math.pow(1 + inflation, y);
+                    n_Dist += gbpPenNom;
+                }
+            });
+
+            tempAccs.forEach(a => {
+                const effAge = a.locked ? a.retireAge : scenarioAge;
+                let isRet = age >= effAge;
+                let mon = isRet ? 0 : a.monthly;
+
+                if (a.events) a.events.forEach(ev => {
+                    if (parseInt(ev.age) === age) {
+                        a.balance += parseFloat(ev.amount);
+                    }
+                });
+
+                // Random return
+                let randReturn = randomNormal(activeRate, volatility);
+                for (let m = 0; m < 12; m++) a.balance = Math.max(0, (a.balance + mon) * (1 + randReturn / 12));
+
+                if (isRet && a.balance > 0) {
+                    let dist = a.balance * drawRate;
+                    a.balance -= dist;
+                    n_Dist += (dist / rates[a.currency]);
+                }
+
+                // Removed: totalBalNom += a.balance / rates[a.currency];
+            });
+
+            // Check if income meets requirements
+            const requiredIncome = realReqAnnual * Math.pow(1 + inflation, y);
+            if (age >= scenarioAge && n_Dist < requiredIncome) {
+                simSuccess = false;
+            }
+        }
+
+        // Calculate final portfolio value
+        let totalBalNom = tempAccs.reduce((sum, a) => sum + a.balance / rates[a.currency], 0);
+
+        endingBalances.push(totalBalNom);
+        if (simSuccess && totalBalNom > 0) successes++;
+        if (!simSuccess) incomeFailures++;
+        if (totalBalNom <= 0) depletionFailures++;
+    }
+
+    const successRate = (successes / numSims * 100).toFixed(1);
+    const avgBalance = endingBalances.reduce((a, b) => a + b, 0) / numSims;
+    const maxBalance = Math.max(...endingBalances);
+    const minBalance = Math.min(...endingBalances);
+    const riskIncomeShortfall = (incomeFailures / numSims * 100).toFixed(1);
+    const riskDepletion = (depletionFailures / numSims * 100).toFixed(1);
+
+    document.getElementById('successRate').textContent = successRate + '%';
+    document.getElementById('avgBalance').textContent = getCurrencySymbol() + Math.round(toDisplayCurrency(avgBalance)).toLocaleString();
+    document.getElementById('maxBalance').textContent = getCurrencySymbol() + Math.round(toDisplayCurrency(maxBalance)).toLocaleString();
+    document.getElementById('minBalance').textContent = getCurrencySymbol() + Math.round(toDisplayCurrency(minBalance)).toLocaleString();
+    document.getElementById('riskIncomeShortfall').textContent = riskIncomeShortfall + '%';
+    document.getElementById('riskDepletion').textContent = riskDepletion + '%';
+    document.getElementById('mcResults').style.display = 'block';
+
+    // Show and create MC charts
+    document.getElementById('mcCharts').style.display = 'block';
+
+    // Destroy previous charts
+    if (mcHistogramChart) mcHistogramChart.destroy();
+    if (mcProbabilityChart) mcProbabilityChart.destroy();
+
+    // Create histogram
+    const bins = createHistogramBins(endingBalances);
+    mcHistogramChart = new Chart(document.getElementById('mcHistogram'), {
+        type: 'bar',
+        data: {
+            labels: bins.labels,
+            datasets: [{
+                label: 'Number of Simulations',
+                data: bins.data,
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Frequency' } },
+                x: { title: { display: true, text: 'Ending Balance (' + getCurrencySymbol() + ')' } }
+            }
+        }
+    });
+
+    // Create cumulative probability chart
+    const probData = createCumulativeProbability(endingBalances);
+    mcProbabilityChart = new Chart(document.getElementById('mcProbability'), {
+        type: 'line',
+        data: {
+            labels: probData.labels,
+            datasets: [{
+                label: 'Cumulative Probability',
+                data: probData.data,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, max: 1, title: { display: true, text: 'Probability' } },
+                x: { title: { display: true, text: 'Ending Balance (' + getCurrencySymbol() + ')' } }
+            }
+        }
+    });
+}
+
 function init() {
     fetchExchangeRates().then(() => {
+        // Load data from localStorage
+        accounts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        pensions = JSON.parse(localStorage.getItem(PENSION_KEY) || '[]');
+        history = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+
+        if (accounts.length === 0 && pensions.length === 0) {
+            alert("No saved data found. Please add your accounts and pensions.");
+        }
+
         updateList();
         updateTotalHeader();
         pensions.forEach(p => addPensionUI(p.name, p.amount, p.age, p.currency));
@@ -69,6 +242,7 @@ function calculate() {
     const drawRate = parseFloat(document.getElementById('drawdownRate').value) / 100;
     const realReqAnnual = parseFloat(document.getElementById('realRequirement').value) * 12;
     const scenarioAge = parseInt(document.getElementById('scenarioRetireAge').value);
+    const lifeExp = parseInt(document.getElementById('lifeExpectancy').value) || 95;
     const activeRate = (parseFloat(document.getElementById('rate-' + activeScenarioType).value) || 6) / 100;
 
     let tempAccs = JSON.parse(JSON.stringify(accounts));
@@ -77,7 +251,7 @@ function calculate() {
     const tableBody = document.getElementById('tableBody');
     tableBody.innerHTML = `<tr style="background:#f8f9fa;"><th>Year (Age)</th><th>Net Income (${getCurrencySymbol()})</th><th>Nominal Pot</th><th>Adjusted Pot</th></tr>`;
 
-    for (let y = 0; y <= (95 - startAge); y++) {
+    for (let y = 0; y <= (lifeExp - startAge); y++) {
         let year = currentYear + y, age = startAge + y;
         let n_Dist = 0, n_Pens = 0, totalBalNom = 0;
         let incomeDetails = [], contribDetails = [], eventTags = [], balDetails = [];
@@ -226,3 +400,39 @@ function addEventInputUI(n='', a='', y='') {
     d.innerHTML = `<input type="text" placeholder="Note" value="${n}" class="ev-n"><input type="number" placeholder="Amt" value="${a}" class="ev-a"><input type="number" placeholder="Age" value="${y}" class="ev-y"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">✕</button>`;
     document.getElementById('eventsListUI').appendChild(d);
 }
+
+function createHistogramBins(balances) {
+    if (balances.length === 0) return { labels: [], data: [] };
+    
+    const min = Math.min(...balances);
+    const max = Math.max(...balances);
+    const binCount = 20;
+    const binSize = (max - min) / binCount || 1;
+    
+    const bins = new Array(binCount).fill(0);
+    const labels = [];
+    
+    for (let i = 0; i < binCount; i++) {
+        const binStart = min + i * binSize;
+        labels.push(Math.round(binStart).toLocaleString());
+    }
+    
+    balances.forEach(b => {
+        const bin = Math.min(Math.floor((b - min) / binSize), binCount - 1);
+        bins[bin]++;
+    });
+    
+    return { labels, data: bins };
+}
+
+function createCumulativeProbability(balances) {
+    if (balances.length === 0) return { labels: [], data: [] };
+    
+    const sorted = [...balances].sort((a, b) => a - b);
+    const labels = sorted.map(b => Math.round(b).toLocaleString());
+    const data = sorted.map((_, i) => (i + 1) / sorted.length);
+    
+    return { labels, data };
+}
+
+
