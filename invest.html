@@ -3,61 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Portfolio Pro - Ultimate Edition</title>
+    <title>Portfolio Pro - Dual Axis Projection</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #1a73e8; --success: #34a853; --danger: #d93025; --gray: #5f6368; --bg: #f0f2f5; --warning: #fbbc04; }
+        :root { --primary: #1a73e8; --success: #34a853; --danger: #d93025; --gray: #5f6368; --bg: #f0f2f5; --income: #fbbc04; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 10px; color: #202124; margin: 0; }
         .dashboard-wrapper { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 1300px; margin: 0 auto; }
         .main-grid { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; }
-        
         @media (min-width: 800px) {
             body { padding: 30px; }
             .main-grid { grid-template-columns: 360px 1fr; align-items: start; }
             .sidebar { position: sticky; top: 30px; }
             .chart-card, .table-container { display: block !important; }
         }
-
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; width: 100%; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; margin-bottom: 20px; box-sizing: border-box; }
         .portfolio-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f2f5; }
         .total-amount { font-size: 2.4rem; font-weight: 800; color: var(--primary); margin: 5px 0; }
-        
-        .risk-selector { display: flex; gap: 5px; margin-bottom: 20px; background: #f1f3f4; padding: 5px; border-radius: 10px; }
-        .risk-btn { flex: 1; border: none; padding: 8px; border-radius: 7px; font-size: 11px; font-weight: bold; cursor: pointer; color: var(--gray); background: transparent; transition: 0.2s; }
-        .risk-btn.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .risk-btn.cons.active { color: var(--danger); }
-        .risk-btn.bal.active { color: var(--primary); }
-        .risk-btn.aggr.active { color: var(--success); }
-
+        .risk-selector { display: flex; gap: 5px; margin-bottom: 15px; background: #f1f3f4; padding: 5px; border-radius: 10px; }
+        .risk-btn { flex: 1; border: none; padding: 8px; border-radius: 7px; font-size: 10px; font-weight: bold; cursor: pointer; color: var(--gray); background: transparent; }
+        .risk-btn.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: var(--primary); }
         .setup-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 12px; }
         label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 9px; color: var(--gray); text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
-
         .btn-calc { background: var(--primary); color: white; width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 16px; border: none; cursor: pointer; margin: 10px 0; }
         .btn-secondary { flex: 1; font-size: 11px; background: #f1f3f4; border-radius: 8px; border: none; padding: 10px; cursor: pointer; color: var(--gray); font-weight: bold; }
-        
-        .account-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; position: relative; }
-        .acc-bal { font-weight: 700; color: var(--primary); font-size: 15px; text-align: right; flex: 1; margin-right: 10px; }
-        
-        .kebab-btn { background: none; border: none; font-size: 20px; color: #bdc1c6; cursor: pointer; }
-        .menu-options { display: none; position: absolute; right: 0; top: 40px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; z-index: 100; min-width: 140px; border: 1px solid #eee; }
+        .account-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .acc-bal { font-weight: 700; color: var(--primary); font-size: 14px; text-align: right; flex: 1; margin-right: 10px; }
+        .kebab-btn { background: none; border: none; font-size: 20px; color: #bdc1c6; cursor: pointer; padding: 5px; }
+        .menu-options { display: none; position: absolute; right: 0; top: 40px; background: white; border-radius: 8px; z-index: 100; min-width: 140px; border: 1px solid #eee; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .menu-options button { width: 100%; padding: 12px 15px; text-align: left; background: white; border: none; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f1f3f4; }
-        
-        .chart-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); height: 450px; box-sizing: border-box; display: none; }
+        .chart-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); height: 500px; display: none; box-sizing: border-box; }
         .table-container { background: white; border-radius: 15px; overflow-x: auto; width: 100%; margin-top: 20px; display: none; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        .main-row { cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 750px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
+        .main-row { cursor: pointer; border-bottom: 2px solid #f0f2f5; }
         .details-row { display: none; background: #fafafa; }
-        .details-container { padding: 10px 15px; border-left: 3px solid var(--primary); font-size: 11px; }
+        .details-container { padding: 15px; border-left: 4px solid var(--primary); font-size: 11px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
         .detail-line { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ddd; }
-        
-        .event-tag { display: inline-block; background: #e8f0fe; color: var(--primary); padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-right: 5px; margin-top: 5px; }
-        .event-input-row { display: grid; grid-template-columns: 1fr 80px 80px 40px; gap: 5px; margin-bottom: 5px; }
-        
+        .cf-breakout { font-size: 10px; line-height: 1.4; color: var(--gray); }
+        .cf-total { margin-top: 4px; font-weight: bold; border-top: 1px solid #ddd; padding-top: 2px; }
+        .tag-event { background: #e8f0fe; color: var(--primary); padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; margin-top: 4px; display: inline-block; }
         .collapsible-content { display: none; padding-top: 15px; }
-        #chartPlaceholder { color: var(--gray); text-align: center; margin-top: 150px; font-style: italic; }
     </style>
 </head>
 <body>
@@ -67,9 +53,9 @@
         <div class="sidebar">
             <div class="card">
                 <div class="portfolio-header">
-                    <label>Total Net Worth</label>
+                    <label>Total Assets (Nominal)</label>
                     <div id="totalPortfolioAmount" class="total-amount">£0</div>
-                    <div id="saveStatus" style="font-size:9px; color:var(--success); font-weight:bold;">Ready</div>
+                    <div id="saveStatus" style="font-size:9px; color:var(--success); font-weight:bold;">Linked</div>
                 </div>
 
                 <label>Projection Mode</label>
@@ -91,7 +77,8 @@
 
                 <div style="display: flex; gap: 10px;">
                     <button class="btn-secondary" onclick="toggleSection('formContent')">+ Account</button>
-                    <button class="btn-secondary" onclick="toggleSection('historyContent'); renderHistoryChart();">History</button>
+                    <button class="btn-secondary" onclick="toggleSection('pensionContent')">+ Pension</button>
+                    <button class="btn-secondary" onclick="toggleSection('historyContent'); renderHistory();">History</button>
                     <button class="btn-secondary" onclick="toggleSection('syncContent')">Sync</button>
                 </div>
 
@@ -99,44 +86,44 @@
                     <div style="background:#f8f9fa; padding:15px; border-radius:12px;">
                         <input type="hidden" id="editIndex" value="-1">
                         <label>Account Name</label><input type="text" id="accName" style="margin-bottom:10px;">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
                             <div><label>Curr</label><select id="accCurr"><option value="GBP">GBP (£)</option><option value="USD">USD ($)</option><option value="HKD">HKD ($)</option></select></div>
                             <div><label>Balance</label><input type="number" id="accBal"></div>
                         </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
                             <div><label>Return %</label><input type="number" id="accRate"></div>
                             <div><label>Draw Age</label><input type="number" id="accRetireAge" value="65"></div>
                         </div>
-                        <label>Monthly Saved</label><input type="number" id="accMonthly" style="margin-bottom:10px;">
-                        
-                        <div style="margin-top:10px; border-top:1px solid #ddd; padding-top:10px;">
-                            <label style="color:var(--primary)">One-off Events</label>
-                            <div id="eventsList" style="margin-bottom:10px;"></div>
-                            <button onclick="addEventUI()" style="font-size:10px; background:none; border:1px solid #ccc; padding:5px; border-radius:5px; cursor:pointer;">+ Add Event</button>
-                        </div>
-
+                        <label>Monthly Saved (Local)</label><input type="number" id="accMonthly" style="margin-bottom:10px;">
+                        <div id="eventsList" style="margin-bottom:10px;"></div>
+                        <button onclick="addEventUI()" style="font-size:10px; background:none; border:1px solid #ccc; padding:5px; border-radius:5px;">+ Add Event</button>
                         <button class="btn-calc" style="background:var(--success); margin-top:20px;" onclick="saveAccount()">Save Account</button>
                     </div>
                 </div>
 
+                <div id="pensionContent" class="collapsible-content">
+                    <div style="background:#e6f4ea; padding:15px; border-radius:12px;">
+                        <label>State Pensions / Social Security</label>
+                        <div id="pensionInputList" style="margin-bottom:10px;"></div>
+                        <button onclick="addPensionUI()" style="font-size:10px; background:white; border:1px solid #34a853; padding:5px; border-radius:5px; color:#34a853;">+ Add Stream</button>
+                        <button class="btn-calc" style="background:var(--success); margin-top:10px;" onclick="savePensions()">Save Pensions</button>
+                    </div>
+                </div>
+
                 <div id="historyContent" class="collapsible-content">
-                    <div style="height: 150px;"><canvas id="historyChart"></canvas></div>
-                    <div id="historyList" style="margin-top:10px; font-size:12px;"></div>
+                    <div style="height: 180px;"><canvas id="historyChart"></canvas></div>
+                    <div id="historyList" style="margin-top:15px; max-height:200px; overflow-y:auto;"></div>
+                    <button onclick="clearHistory()" style="color:var(--danger); background:none; border:none; width:100%; font-size:10px; margin-top:10px;">Clear History</button>
                 </div>
 
                 <div id="syncContent" class="collapsible-content">
-                    <label>File Backup</label>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button class="btn-secondary" style="background:#e8f0fe;" onclick="downloadBackup()">Download .JSON</button>
-                        <button class="btn-secondary" style="background:#e8f0fe;" onclick="document.getElementById('fileInput').click()">Upload .JSON</button>
-                        <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)">
-                    </div>
-                    
-                    <label>Manual Sync String</label>
+                    <button class="btn-secondary" style="width:100%; margin-bottom:5px;" onclick="downloadBackup()">Download .JSON</button>
+                    <button class="btn-secondary" style="width:100%; margin-bottom:10px;" onclick="document.getElementById('fileInput').click()">Upload .JSON</button>
+                    <input type="file" id="fileInput" style="display:none" onchange="handleFileUpload(event)">
                     <textarea id="syncArea" style="width:100%; height:80px; font-size:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:10px;"></textarea>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn-secondary" onclick="exportData()">Copy Code</button>
-                        <button class="btn-secondary" onclick="importData()">Import Code</button>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-secondary" onclick="exportData()">Copy</button>
+                        <button class="btn-secondary" onclick="importData()">Import</button>
                     </div>
                 </div>
             </div>
@@ -144,7 +131,6 @@
 
         <div class="visualization">
             <div id="chartCard" class="chart-card">
-                <div id="chartPlaceholder">Click "Project Life Path" to view growth projection...</div>
                 <canvas id="growthChart"></canvas>
             </div>
             <div id="tableContainer" class="table-container">
@@ -155,17 +141,20 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'GlobalPortfolio_V4';
-    const HISTORY_KEY = 'GlobalPortfolio_HIST_V4';
+    const STORAGE_KEY = 'GlobalPortfolio_V6';
+    const PENSION_KEY = 'GlobalPortfolio_PENSIONS_V6';
+    const HIST_KEY = 'GlobalPortfolio_HIST_V6';
     const rates = { "GBP": 1.0, "USD": 1.27, "HKD": 9.92 };
     
     let accounts = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    let pensions = JSON.parse(localStorage.getItem(PENSION_KEY)) || [];
+    let history = JSON.parse(localStorage.getItem(HIST_KEY)) || [];
     let riskModifier = 0;
     let myChart, hChart;
 
     updateList();
     updateTotalHeader();
+    pensions.forEach(p => addPensionUI(p.name, p.amount, p.age, p.currency));
 
     function setRisk(modifier, btn) {
         riskModifier = modifier;
@@ -191,16 +180,34 @@
     }
 
     function addEventUI(name = '', amount = '', age = '') {
-        const container = document.getElementById('eventsList');
         const div = document.createElement('div');
-        div.className = 'event-input-row';
-        div.innerHTML = `<input type="text" placeholder="Name" value="${name}" class="ev-name"><input type="number" placeholder="Amt" value="${amount}" class="ev-amt"><input type="number" placeholder="Age" value="${age}" class="ev-age"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">✕</button>`;
-        container.appendChild(div);
+        div.style = "display:grid; grid-template-columns: 1fr 60px 50px 30px; gap:5px; margin-bottom:5px;";
+        div.innerHTML = `<input type="text" placeholder="Note" value="${name}" class="ev-n"><input type="number" placeholder="Amt" value="${amount}" class="ev-a"><input type="number" placeholder="Age" value="${age}" class="ev-y"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">✕</button>`;
+        document.getElementById('eventsList').appendChild(div);
+    }
+
+    function addPensionUI(name = '', amount = '', age = '', currency = 'GBP') {
+        const div = document.createElement('div');
+        div.className = 'input-row-multi';
+        div.innerHTML = `<input type="text" placeholder="Name" value="${name}" class="pen-name"><select class="pen-curr"><option value="GBP" ${currency==='GBP'?'selected':''}>GBP</option><option value="USD" ${currency==='USD'?'selected':''}>USD</option><option value="HKD" ${currency==='HKD'?'selected':''}>HKD</option></select><input type="number" placeholder="Amt" value="${amount}" class="pen-amt"><input type="number" placeholder="Age" value="${age}" class="pen-age"><button onclick="this.parentElement.remove()" style="color:red; background:none; border:none;">✕</button>`;
+        document.getElementById('pensionInputList').appendChild(div);
+    }
+
+    function savePensions() {
+        pensions = [];
+        document.querySelectorAll('#pensionInputList .input-row-multi').forEach(row => {
+            const name = row.querySelector('.pen-name').value;
+            const amount = row.querySelector('.pen-amt').value;
+            const age = row.querySelector('.pen-age').value;
+            const currency = row.querySelector('.pen-curr').value;
+            if (name && amount && age) pensions.push({ name, amount: parseFloat(amount), age: parseInt(age), currency });
+        });
+        localStorage.setItem(PENSION_KEY, JSON.stringify(pensions));
+        toggleSection('pensionContent');
+        calculate();
     }
 
     function calculate() {
-        if (!document.getElementById('chartCard')) return;
-        document.getElementById('chartPlaceholder').style.display = 'none';
         const currentYear = new Date().getFullYear();
         const birthYear = parseInt(document.getElementById('birthYear').value);
         const startAge = currentYear - birthYear;
@@ -208,70 +215,161 @@
         const drawRate = parseFloat(document.getElementById('drawdownRate').value) / 100;
         const retirementYear = birthYear + 65;
 
-        let currentTotal = 0; accounts.forEach(a => currentTotal += (a.balance / rates[a.currency]));
-        const todayKey = new Date().toISOString().split('T')[0];
-        const existingIdx = history.findIndex(h => h.date === todayKey);
-        if(existingIdx > -1) { history[existingIdx].total = currentTotal; } else { history.push({ date: todayKey, total: currentTotal }); }
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        let curTotal = 0; accounts.forEach(a => curTotal += (a.balance / rates[a.currency]));
+        const tKey = new Date().toISOString().split('T')[0];
+        const exIdx = history.findIndex(h => h.date === tKey);
+        if(exIdx > -1) { history[exIdx].total = curTotal; } else { history.push({ date: tKey, total: curTotal }); }
+        localStorage.setItem(HIST_KEY, JSON.stringify(history));
 
         let tempAccs = JSON.parse(JSON.stringify(accounts));
-        let labels = [], nominalData = [], realData = [];
+        let labels = [], nomPotData = [], realPotData = [], nomIncData = [], realIncData = [];
         const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = `<tr style="background:#f8f9fa;"><th>Year (Age)</th><th>Cash Flow</th><th>Nominal</th><th>Real Power</th></tr>`;
+        tableBody.innerHTML = `<tr style="background:#f8f9fa;"><th>Year (Age)</th><th>Income Breakout (Nominal £)</th><th>Nominal Pot</th><th>Real Pot</th></tr>`;
 
         for (let y = 0; y <= (95 - startAge); y++) {
             let year = currentYear + y, age = startAge + y;
-            let totalIn = 0, totalOut = 0, totalBal = 0;
-            let snapshots = [];
-            let activeEvents = [];
+            let n_In = 0, n_Dist = 0, n_Pens = 0, totalBalNom = 0;
+            let tags = [], balDetails = [], incomeBreakdown = [];
+
+            pensions.forEach(p => {
+                if (age >= p.age) {
+                    let gbpPenNom = (p.amount / rates[p.currency]) * Math.pow(1 + inflation, y);
+                    n_Pens += gbpPenNom;
+                    incomeBreakdown.push({ n: p.name, v: gbpPenNom });
+                }
+            });
 
             tempAccs.forEach(a => {
                 let isRet = age >= a.retireAge, mon = isRet ? 0 : a.monthly;
-                let adjustedRate = a.rate + riskModifier;
-                for (let m = 0; m < 12; m++) a.balance = (a.balance + mon) * (1 + (adjustedRate / 12));
+                let adjR = a.rate + riskModifier;
+                for (let m = 0; m < 12; m++) a.balance = (a.balance + mon) * (1 + (adjR / 12));
                 
                 if (a.events) {
                     a.events.forEach(ev => {
                         if (parseInt(ev.age) === age) {
+                            let gbpEvNom = (ev.amount / rates[a.currency]) * Math.pow(1 + inflation, y);
                             a.balance += parseFloat(ev.amount) * Math.pow(1 + inflation, y);
-                            activeEvents.push(`${ev.name}: ${parseFloat(ev.amount).toLocaleString()}`);
+                            tags.push(`<span class="tag-event">${ev.name}: £${Math.round(gbpEvNom/Math.pow(1+inflation,y)).toLocaleString()}</span>`);
                         }
                     });
                 }
 
-                let draw = isRet ? a.balance * drawRate : 0;
-                if (isRet) a.balance -= draw;
+                let dist = isRet ? a.balance * drawRate : 0;
+                if (isRet) {
+                    a.balance -= dist;
+                    let gbpDistNom = dist / rates[a.currency];
+                    n_Dist += gbpDistNom;
+                    incomeBreakdown.push({ n: `${a.name} Dist`, v: gbpDistNom });
+                }
                 
-                totalIn += (mon * 12) / rates[a.currency];
-                totalOut += draw / rates[a.currency];
-                totalBal += a.balance / rates[a.currency];
-                snapshots.push({ n: a.name, b: a.balance, c: a.currency });
+                n_In += ((mon * 12) / rates[a.currency]) * Math.pow(1 + inflation, y);
+                totalBalNom += a.balance / rates[a.currency];
+                balDetails.push({ n: a.name, b: a.balance, c: a.currency });
             });
 
-            let realVal = totalBal / Math.pow(1 + inflation, y);
-            labels.push(year); nominalData.push(Math.round(totalBal)); realData.push(Math.round(realVal));
-            
-            const rid = `row-${y}`;
-            const detailLines = snapshots.map(s => `<div class="detail-line"><span>${s.n}</span><span>${s.c} ${Math.round(s.b).toLocaleString()}</span></div>`).join('');
-            const eventTags = activeEvents.map(e => `<span class="event-tag">${e}</span>`).join('');
-            let cf = age < 65 ? `<span style="color:var(--success)">+£${Math.round(totalIn).toLocaleString()}</span>` : `<span style="color:var(--danger)">-£${Math.round(totalOut).toLocaleString()}</span>`;
+            let realValGBP = totalBalNom / Math.pow(1 + inflation, y);
+            let aggregateNom = (n_In + n_Pens + n_Dist);
+            let aggregateReal = aggregateNom / Math.pow(1 + inflation, y);
 
-            tableBody.innerHTML += `<tr class="main-row" onclick="toggleRow('${rid}')" style="${year === retirementYear ? 'background:#fff8e1;' : ''}"><td><b>${year}</b> (${age}) ▾</td><td><small>${cf}</small><br>${eventTags}</td><td>£${Math.round(totalBal).toLocaleString()}</td><td style="color:var(--success); font-weight:bold;">£${Math.round(realVal).toLocaleString()}</td></tr><tr id="${rid}" class="details-row"><td colspan="4"><div class="details-container"><b>Breakdown:</b>${detailLines}</div></td></tr>`;
+            labels.push(year);
+            nomPotData.push(Math.round(totalBalNom));
+            realPotData.push(Math.round(realValGBP));
+            nomIncData.push(Math.round(aggregateNom));
+            realIncData.push(Math.round(aggregateReal));
+
+            const rid = `row-${y}`;
+            const balRows = balDetails.map(s => `<div class="detail-line"><span>${s.n}</span><span>${s.c} ${Math.round(s.b).toLocaleString()}</span></div>`).join('');
+            const incomeRows = incomeBreakdown.map(i => `<div class="detail-line"><span>${i.n}</span><span style="color:var(--success)">+£${Math.round(i.v).toLocaleString()}</span></div>`).join('');
+
+            tableBody.innerHTML += `
+                <tr class="main-row" onclick="toggleRow('${rid}')" style="${year === retirementYear ? 'background:#fff8e1;' : ''}">
+                    <td><b>${year}</b> (${age}) ▾</td>
+                    <td>
+                        <div class="cf-breakout">
+                            ${n_In > 0 ? `Savings: £${Math.round(n_In).toLocaleString()}<br>` : ''}
+                            ${n_Pens > 0 ? `Pensions: £${Math.round(n_Pens).toLocaleString()}<br>` : ''}
+                            ${n_Dist > 0 ? `Distributions: £${Math.round(n_Dist).toLocaleString()}<br>` : ''}
+                        </div>
+                        <div class="cf-total" style="color:var(--success)">
+                            Net Income: £${Math.round(aggregateNom).toLocaleString()} (Real £${Math.round(aggregateReal).toLocaleString()})
+                        </div>
+                        ${tags.join(' ')}
+                    </td>
+                    <td>£${Math.round(totalBalNom).toLocaleString()}</td>
+                    <td style="color:var(--success); font-weight:bold;">£${Math.round(realValGBP).toLocaleString()}</td>
+                </tr>
+                <tr id="${rid}" class="details-row"><td colspan="4">
+                    <div class="details-container">
+                        <div><b>Balances:</b>${balRows}</div>
+                        <div><b>Annual Income (Nominal):</b>${incomeRows || 'None'}</div>
+                    </div>
+                </td></tr>`;
         }
         document.getElementById('tableContainer').style.display = 'block';
         document.getElementById('chartCard').style.display = 'block';
-        renderGrowthChart(labels, nominalData, realData, retirementYear);
-        renderHistory();
+        renderGrowthChart(labels, nomPotData, realPotData, nomIncData, realIncData, retirementYear);
         updateTotalHeader();
+    }
+
+    function renderGrowthChart(l, np, rp, ni, ri, retirementYear) {
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: l,
+                datasets: [
+                    { label: 'Nominal Pot', data: np, borderColor: '#1a73e8', pointRadius: 0, tension: 0.2, yAxisID: 'y' },
+                    { label: 'Real Pot', data: rp, borderColor: '#34a853', pointRadius: 0, tension: 0.2, yAxisID: 'y' },
+                    { label: 'Nominal Income', data: ni, borderColor: '#fbbc04', borderDash: [5, 5], pointRadius: 0, tension: 0.2, yAxisID: 'y1' },
+                    { label: 'Real Income', data: ri, borderColor: '#e67c73', borderDash: [5, 5], pointRadius: 0, tension: 0.2, yAxisID: 'y1' }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y: { 
+                        type: 'linear', display: true, position: 'left',
+                        title: { display: true, text: 'Portfolio Total (£)', font: { weight: 'bold' } },
+                        ticks: { callback: v => '£' + (v / 1000).toFixed(0) + 'k' }
+                    },
+                    y1: {
+                        type: 'linear', display: true, position: 'right',
+                        title: { display: true, text: 'Annual Income (£)', font: { weight: 'bold' } },
+                        grid: { drawOnChartArea: false },
+                        ticks: { callback: v => '£' + (v / 1000).toFixed(0) + 'k' }
+                    }
+                }
+            },
+            plugins: [{
+                beforeDraw: chart => {
+                    const {ctx, chartArea: {top, bottom, left, right}, scales: {x}} = chart;
+                    const xPos = x.getPixelForValue(retirementYear);
+                    if (xPos >= left && xPos <= right) {
+                        ctx.save(); ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.moveTo(xPos, top); ctx.lineTo(xPos, bottom); ctx.lineWidth = 2; ctx.strokeStyle = '#fbc02d'; ctx.stroke(); ctx.restore();
+                    }
+                }
+            }]
+        });
+    }
+
+    function renderHistory() {
+        const list = document.getElementById('historyList');
+        list.innerHTML = history.slice().reverse().map(h => `<div class="history-item"><span>${h.date}</span><b>£${Math.round(h.total).toLocaleString()}</b></div>`).join('');
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        if (hChart) hChart.destroy();
+        hChart = new Chart(ctx, { type: 'line', data: { labels: history.map(h => h.date), datasets: [{ label: 'Total £', data: history.map(h => h.total), borderColor: '#1a73e8', backgroundColor: 'rgba(26, 115, 232, 0.1)', fill: true, tension: 0.1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
     }
 
     function saveAccount() {
         const events = [];
-        document.querySelectorAll('.event-input-row').forEach(row => {
-            const name = row.querySelector('.ev-name').value;
-            const amount = row.querySelector('.ev-amt').value;
-            const age = row.querySelector('.ev-age').value;
-            if (name && amount && age) events.push({ name, amount: parseFloat(amount), age: parseInt(age) });
+        document.querySelectorAll('#eventsList div').forEach(row => {
+            const n = row.querySelector('.ev-n').value;
+            const a = row.querySelector('.ev-a').value;
+            const y = row.querySelector('.ev-y').value;
+            if (n && a && y) events.push({ name: n, amount: parseFloat(a), age: parseInt(y) });
         });
         const data = {
             name: document.getElementById('accName').value,
@@ -288,6 +386,11 @@
         updateList(); updateTotalHeader(); clearForm(); toggleSection('formContent');
     }
 
+    function updateList() {
+        const list = document.getElementById('accountList');
+        list.innerHTML = accounts.map((a, i) => `<div class="account-item"><div><b>${a.name}</b><br><small>${a.currency} · ${a.events ? a.events.length : 0} Events</small></div><div class="acc-bal">${a.currency} ${Math.round(a.balance).toLocaleString()}</div><button class="kebab-btn" onclick="toggleMenu('menu-${i}')">⋮</button><div id="menu-${i}" class="menu-options"><button onclick="editAccount(${i})">Edit</button><button style="color:var(--danger)" onclick="confirmRemove(${i})">Remove</button></div></div>`).join('');
+    }
+
     function editAccount(i) {
         const a = accounts[i];
         document.getElementById('accName').value = a.name;
@@ -299,34 +402,17 @@
         document.getElementById('editIndex').value = i;
         document.getElementById('eventsList').innerHTML = '';
         if (a.events) a.events.forEach(ev => addEventUI(ev.name, ev.amount, ev.age));
-        if (document.getElementById('formContent').style.display !== 'block') toggleSection('formContent');
-        window.scrollTo(0,0);
+        toggleSection('formContent');
     }
 
-    function renderGrowthChart(l, n, r, retirementYear) {
-        const ctx = document.getElementById('growthChart').getContext('2d');
-        if (myChart) myChart.destroy();
-        myChart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: l, datasets: [{ label: 'Nominal', data: n, borderColor: '#1a73e8', pointRadius: 0, tension: 0.2 }, { label: 'Real Power', data: r, borderColor: '#34a853', pointRadius: 0, tension: 0.2 }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { callback: v => '£' + (v / 1000).toFixed(0) + 'k' } } } },
-            plugins: [{ beforeDraw: chart => { const {ctx, chartArea: {top, bottom, left, right}, scales: {x}} = chart; const xPos = x.getPixelForValue(retirementYear); if (xPos >= left && xPos <= right) { ctx.save(); ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.moveTo(xPos, top); ctx.lineTo(xPos, bottom); ctx.lineWidth = 2; ctx.strokeStyle = '#fbc02d'; ctx.stroke(); ctx.fillStyle = '#fbc02d'; ctx.font = 'bold 10px sans-serif'; ctx.fillText('RETIRE (65)', xPos + 5, top + 15); ctx.restore(); } } }]
-        });
-    }
-
-    function updateList() {
-        const list = document.getElementById('accountList');
-        list.innerHTML = accounts.map((a, i) => `<div class="account-item"><div class="acc-info"><div class="acc-name">${a.name}</div><div style="font-size:10px; color:var(--gray);">${a.currency} · ${a.events ? a.events.length : 0} Events</div></div><div class="acc-bal">${a.currency} ${Math.round(a.balance).toLocaleString()}</div><button class="kebab-btn" onclick="toggleMenu('menu-${i}')">⋮</button><div id="menu-${i}" class="menu-options"><button onclick="editAccount(${i})">Edit</button><button style="color:var(--danger)" onclick="confirmRemove(${i})">Remove</button></div></div>`).join('');
-    }
-    function confirmRemove(i) { if(confirm(`Remove ${accounts[i].name}?`)) { accounts.splice(i,1); localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); updateList(); updateTotalHeader(); } }
+    function confirmRemove(i) { if(confirm("Remove?")) { accounts.splice(i,1); localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); updateList(); updateTotalHeader(); } }
     function clearForm() { document.querySelectorAll('#formContent input').forEach(i => i.type !== 'hidden' ? i.value = "" : null); document.getElementById('eventsList').innerHTML = ''; document.getElementById('editIndex').value = "-1"; }
     function updateTotalHeader() { let t = 0; accounts.forEach(a => t += (a.balance / rates[a.currency])); document.getElementById('totalPortfolioAmount').innerText = "£" + Math.round(t).toLocaleString(); }
-    function renderHistory() { document.getElementById('historyList').innerHTML = history.slice().reverse().map(h => `<div class="history-item"><span>${h.date}</span><span>£${Math.round(h.total).toLocaleString()}</span></div>`).join(''); }
-    function renderHistoryChart() { const ctx = document.getElementById('historyChart').getContext('2d'); if (hChart) hChart.destroy(); hChart = new Chart(ctx, { type: 'line', data: { labels: history.map(h => h.date), datasets: [{label: 'Total £', data: history.map(h => h.total), borderColor: '#1a73e8', fill: true, backgroundColor: 'rgba(26, 115, 232, 0.05)', tension: 0.1}] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }}}}); }
-    function downloadBackup() { const data = { accounts, history }; const blob = new Blob([JSON.stringify(data)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup.json`; a.click(); }
-    function handleFileUpload(e) { const reader = new FileReader(); reader.onload = ev => { const d = JSON.parse(ev.target.result); accounts = d.accounts; history = d.history; localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); updateList(); renderHistory(); }; reader.readAsText(e.target.files[0]); }
-    function exportData() { document.getElementById('syncArea').value = btoa(JSON.stringify({acc: accounts, hist: history})); alert("Code copied to box!"); }
-    function importData() { try { const d = JSON.parse(atob(document.getElementById('syncArea').value)); accounts = d.acc; history = d.hist; localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); updateList(); renderHistory(); alert("Data Imported!"); } catch(e) { alert("Invalid Sync Code"); }}
+    function downloadBackup() { const blob = new Blob([JSON.stringify({accounts, pensions, history})], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `portfolio_backup.json`; a.click(); }
+    function handleFileUpload(e) { const reader = new FileReader(); reader.onload = ev => { const d = JSON.parse(ev.target.result); accounts = d.accounts; pensions = d.pensions; history = d.history || []; localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); localStorage.setItem(PENSION_KEY, JSON.stringify(pensions)); localStorage.setItem(HIST_KEY, JSON.stringify(history)); location.reload(); }; reader.readAsText(e.target.files[0]); }
+    function exportData() { document.getElementById('syncArea').value = btoa(JSON.stringify({acc: accounts, pen: pensions, hist: history})); alert("Copied!"); }
+    function importData() { try { const d = JSON.parse(atob(document.getElementById('syncArea').value)); accounts = d.acc; pensions = d.pen || []; history = d.hist || []; localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); localStorage.setItem(PENSION_KEY, JSON.stringify(pensions)); localStorage.setItem(HIST_KEY, JSON.stringify(history)); location.reload(); } catch(e) { alert("Error"); }}
+    function clearHistory() { if(confirm("Clear history?")) { history = []; localStorage.setItem(HIST_KEY, '[]'); renderHistory(); } }
 </script>
 </body>
 </html>
