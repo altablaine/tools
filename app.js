@@ -1,19 +1,62 @@
 const STORAGE_KEY = 'GlobalPortfolio_V6';
 const PENSION_KEY = 'GlobalPortfolio_PENSIONS_V6';
 const HIST_KEY = 'GlobalPortfolio_HIST_V6';
-const rates = { "GBP": 1.0, "USD": 1.27, "HKD": 9.92 };
+let rates = { "GBP": 1.0, "USD": 1.27, "HKD": 9.92 }; // Fallback rates
 
 let accounts = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let pensions = JSON.parse(localStorage.getItem(PENSION_KEY)) || [];
 let history = JSON.parse(localStorage.getItem(HIST_KEY)) || [];
 let activeScenarioType = 'bal';
 let myChart;
+let displayCurrency = 'GBP';
+
+async function fetchExchangeRates() {
+    try {
+        const response = await fetch('https://api.exchangerate-api.com/v4/latest/GBP');
+        const data = await response.json();
+        rates = {
+            "GBP": 1.0,
+            "USD": data.rates.USD,
+            "HKD": data.rates.HKD
+        };
+        console.log('Exchange rates updated:', rates);
+        updateRatesDisplay();
+    } catch (error) {
+        console.warn('Failed to fetch exchange rates, using fallback:', error);
+        updateRatesDisplay(true); // Show fallback message
+    }
+}
+
+function updateRatesDisplay(isFallback = false) {
+    const display = document.getElementById('ratesDisplay');
+    if (isFallback) {
+        display.innerHTML = 'Exchange Rates (GBP base): Using fallback rates';
+    } else {
+        display.innerHTML = `Exchange Rates (GBP base): USD: ${rates.USD.toFixed(2)} | HKD: ${rates.HKD.toFixed(2)}`;
+    }
+}
+
+function toDisplayCurrency(amount) {
+    return displayCurrency === 'USD' ? amount * rates.USD : amount;
+}
+
+function getCurrencySymbol() {
+    return displayCurrency === 'USD' ? '$' : '£';
+}
+
+function changeDisplayCurrency(curr) {
+    displayCurrency = curr;
+    calculate();
+}
 
 function init() {
-    updateList();
-    updateTotalHeader();
-    pensions.forEach(p => addPensionUI(p.name, p.amount, p.age, p.currency));
-    history.forEach(h => addHistoryUI(h.date, h.val));
+    fetchExchangeRates().then(() => {
+        updateList();
+        updateTotalHeader();
+        pensions.forEach(p => addPensionUI(p.name, p.amount, p.age, p.currency));
+        history.forEach(h => addHistoryUI(h.date, h.val));
+        document.getElementById('displayCurrency').value = displayCurrency;
+    });
 }
 
 document.addEventListener('DOMContentLoaded', init);
@@ -32,7 +75,7 @@ function calculate() {
     let labels = [], nomPotData = [], realPotData = [], nomIncData = [], realIncData = [], floorData = [], histData = [];
 
     const tableBody = document.getElementById('tableBody');
-    tableBody.innerHTML = `<tr style="background:#f8f9fa;"><th>Year (Age)</th><th>Net Income (£)</th><th>Nominal Pot</th><th>Adjusted Pot</th></tr>`;
+    tableBody.innerHTML = `<tr style="background:#f8f9fa;"><th>Year (Age)</th><th>Net Income (${getCurrencySymbol()})</th><th>Nominal Pot</th><th>Adjusted Pot</th></tr>`;
 
     for (let y = 0; y <= (95 - startAge); y++) {
         let year = currentYear + y, age = startAge + y;
@@ -55,7 +98,7 @@ function calculate() {
             if (a.events) a.events.forEach(ev => {
                 if (parseInt(ev.age) === age) {
                     a.balance += parseFloat(ev.amount);
-                    eventTags.push(`<span class="tag-event">${ev.name}: £${Math.round(parseFloat(ev.amount)/rates[a.currency]).toLocaleString()}</span>`);
+                    eventTags.push(`<span class="tag-event">${ev.name}: ${getCurrencySymbol()}${Math.round(toDisplayCurrency(parseFloat(ev.amount)/rates[a.currency])).toLocaleString()}</span>`);
                 }
             });
 
@@ -89,23 +132,23 @@ function calculate() {
         tableBody.innerHTML += `
                 <tr class="main-row" onclick="toggleRow('row-${y}')" style="${isMilestone ? 'background:#e8f0fe; border-left: 5px solid var(--primary);' : ''}">
                     <td><b>${year}</b> (${age}) ${isMilestone ? '🎯' : '▾'}</td>
-                    <td style="color:${color}; font-weight:${isRet?'bold':'normal'}">Net: £${Math.round(aggNom).toLocaleString()} (£${Math.round(aggReal).toLocaleString()} adj) ${eventTags.join('')}</td>
-                    <td>£${Math.round(totalBalNom).toLocaleString()}</td>
-                    <td>£${Math.round(realPot).toLocaleString()}</td>
+                    <td style="color:${color}; font-weight:${isRet?'bold':'normal'}">Net: ${getCurrencySymbol()}${Math.round(toDisplayCurrency(aggNom)).toLocaleString()} (${getCurrencySymbol()}${Math.round(toDisplayCurrency(aggReal)).toLocaleString()} adj) ${eventTags.join('')}</td>
+                    <td>${getCurrencySymbol()}${Math.round(toDisplayCurrency(totalBalNom)).toLocaleString()}</td>
+                    <td>${getCurrencySymbol()}${Math.round(toDisplayCurrency(realPot)).toLocaleString()}</td>
                 </tr>
                 <tr id="row-${y}" class="details-row" style="display:none;"><td colspan="4">
                     <div class="details-container">
-                        <div><b>Nominal Account Bals:</b><br>${balDetails.map(d=>d.n+': £'+Math.round(d.v).toLocaleString()).join('<br>')}</div>
+                        <div><b>Nominal Account Bals:</b><br>${balDetails.map(d=>d.n+': '+getCurrencySymbol()+Math.round(toDisplayCurrency(d.v)).toLocaleString()).join('<br>')}</div>
                         <div>
-                            <b>Income:</b><br>${incomeDetails.map(i=>i.n+': £'+Math.round(i.v).toLocaleString()).join('<br>') || 'None'}
+                            <b>Income:</b><br>${incomeDetails.map(i=>i.n+': '+getCurrencySymbol()+Math.round(toDisplayCurrency(i.v)).toLocaleString()).join('<br>') || 'None'}
                             <hr style="margin:5px 0;">
-                            <b>Activity:</b><br>${contribDetails.map(c=>c.n+' Contrib: £'+Math.round(c.v).toLocaleString()).join('<br>') || 'None'}
+                            <b>Activity:</b><br>${contribDetails.map(c=>c.n+' Contrib: '+getCurrencySymbol()+Math.round(toDisplayCurrency(c.v)).toLocaleString()).join('<br>') || 'None'}
                         </div>
                     </div>
                 </td></tr>`;
     }
     document.getElementById('chartCard').style.display = 'block'; document.getElementById('tableContainer').style.display = 'block';
-    renderGrowthChart(labels, nomPotData, realPotData, nomIncData, realIncData, floorData, histData);
+    renderGrowthChart(labels, nomPotData.map(toDisplayCurrency), realPotData.map(toDisplayCurrency), nomIncData.map(toDisplayCurrency), realIncData.map(toDisplayCurrency), floorData.map(toDisplayCurrency), histData.map(h => h ? toDisplayCurrency(h) : null));
     updateTotalHeader();
 }
 
@@ -132,11 +175,11 @@ function renderGrowthChart(l, np, rp, ni, ri, fd, hd) {
     myChart = new Chart(ctx, {
         type: 'line',
         data: { labels: l, datasets: [
-            { label: 'Nominal Pot', data: np, borderColor: '#1a73e8', pointRadius: 0, tension: 0.2, yAxisID: 'y' },
-            { label: 'Adjusted Pot', data: rp, borderColor: '#34a853', pointRadius: 0, tension: 0.2, yAxisID: 'y' },
-            { label: 'Logged Progress', data: hd, backgroundColor: '#fbbc04', borderColor: '#fbbc04', pointRadius: 5, showLine: false, yAxisID: 'y' },
-            { label: 'Adj Income', data: ri, borderColor: '#e67c73', borderDash: [5, 5], pointRadius: 0, tension: 0.2, yAxisID: 'y1' },
-            { label: 'Floor', data: fd, borderColor: '#ea4335', borderWidth: 2, pointRadius: 0, yAxisID: 'y1' }
+            { label: `Nominal Pot (${getCurrencySymbol()})`, data: np, borderColor: '#1a73e8', pointRadius: 0, tension: 0.2, yAxisID: 'y' },
+            { label: `Adjusted Pot (${getCurrencySymbol()})`, data: rp, borderColor: '#34a853', pointRadius: 0, tension: 0.2, yAxisID: 'y' },
+            { label: `Logged Progress (${getCurrencySymbol()})`, data: hd, backgroundColor: '#fbbc04', borderColor: '#fbbc04', pointRadius: 5, showLine: false, yAxisID: 'y' },
+            { label: `Adj Income (${getCurrencySymbol()})`, data: ri, borderColor: '#e67c73', borderDash: [5, 5], pointRadius: 0, tension: 0.2, yAxisID: 'y1' },
+            { label: `Floor (${getCurrencySymbol()})`, data: fd, borderColor: '#ea4335', borderWidth: 2, pointRadius: 0, yAxisID: 'y1' }
         ]},
         options: { responsive: true, maintainAspectRatio: false, scales: { y: { position: 'left' }, y1: { position: 'right', grid: { drawOnChartArea: false } } } }
     });
@@ -145,7 +188,7 @@ function renderGrowthChart(l, np, rp, ni, ri, fd, hd) {
 function applyScenario(t, b) { activeScenarioType = t; document.querySelectorAll('.risk-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); calculate(); }
 function toggleSection(id) { const el = document.getElementById(id); el.style.display = el.style.display === 'block' ? 'none' : 'block'; }
 function toggleRow(id) { const el = document.getElementById(id); el.style.display = el.style.display === 'table-row' ? 'none' : 'table-row'; }
-function updateTotalHeader() { let t = 0; accounts.forEach(a => t += (a.balance / rates[a.currency])); document.getElementById('totalPortfolioAmount').innerText = "£" + Math.round(t).toLocaleString(); }
+function updateTotalHeader() { let t = 0; accounts.forEach(a => t += (a.balance / rates[a.currency])); document.getElementById('totalPortfolioAmount').innerText = getCurrencySymbol() + Math.round(toDisplayCurrency(t)).toLocaleString(); }
 function updateList() { document.getElementById('accountList').innerHTML = accounts.map((a, i) => `<div class="account-item"><div><b>${a.name}</b><br><small>${a.currency} · Draw: ${a.retireAge} ${a.locked?'🔒':'🔗'}</small></div><button class="btn-secondary" style="padding:4px 8px; flex:none;" onclick="editAccount(${i})">Edit</button></div>`).join(''); }
 function editAccount(i) {
     const a = accounts[i]; document.getElementById('accName').value = a.name; document.getElementById('accCurr').value = a.currency; document.getElementById('accBal').value = a.balance; document.getElementById('accRetireAge').value = a.retireAge; document.getElementById('accMonthly').value = a.monthly; document.getElementById('accLocked').checked = a.locked; document.getElementById('editIndex').value = i; document.getElementById('eventsListUI').innerHTML = '';

@@ -27,6 +27,7 @@ A lightweight retirement prediction tool built with HTML, CSS, and JavaScript. I
 - **Inflation %**
 - **Safe withdrawal %**
 - **Annual requirement (real)** — monthly requirement is annualized internally
+- **Display currency** — View projections in GBP (£) or USD ($), default GBP
 
 ### Risk / growth scenarios
 You can select a growth rate to model different portfolio return assumptions.
@@ -70,6 +71,8 @@ After clicking **Project Life Path**, the tool renders:
   - Contributions
   - Account balances
 
+All amounts are displayed in the selected display currency (GBP or USD).
+
 ---
 
 ## � File Structure
@@ -102,8 +105,7 @@ You can also:
 
 ## � Dependencies
 
-- **Chart.js** (loaded from CDN for charting) — No local installation needed.
-
+- **Chart.js** (loaded from CDN for charting) — No local installation needed.- **Exchange Rate API** (fetched from exchangerate-api.com for currency conversion) — Free, no key required; uses prior EOD rates.
 ---
 
 ## �🛠 Notes / Tips
