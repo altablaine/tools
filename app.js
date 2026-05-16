@@ -363,7 +363,15 @@ function applyScenario(t, b) { activeScenarioType = t; document.querySelectorAll
 function toggleSection(id) { const el = document.getElementById(id); el.style.display = el.style.display === 'block' ? 'none' : 'block'; }
 function toggleRow(id) { const el = document.getElementById(id); el.style.display = el.style.display === 'table-row' ? 'none' : 'table-row'; }
 function updateTotalHeader() { let t = 0; accounts.forEach(a => t += (a.balance / rates[a.currency])); document.getElementById('totalPortfolioAmount').innerText = getCurrencySymbol() + Math.round(toDisplayCurrency(t)).toLocaleString(); }
-function updateList() { document.getElementById('accountList').innerHTML = accounts.map((a, i) => `<div class="account-item"><div><b>${a.name}</b><br><small>${a.currency} · Draw: ${a.retireAge} ${a.locked?'🔒':'🔗'}</small></div><button class="btn-secondary" style="padding:4px 8px; flex:none;" onclick="editAccount(${i})">Edit</button></div>`).join(''); }
+function updateList() {
+    document.getElementById('accountList').innerHTML = accounts.map((a, i) => {
+        const balNom = parseFloat(a.balance) || 0;
+        const balBase = balNom / (rates[a.currency] || 1);
+        const dispBal = getCurrencySymbol() + Math.round(toDisplayCurrency(balBase)).toLocaleString();
+        return `<div class="account-item"><div><b>${a.name}</b><br><small>${a.currency} · Draw: ${a.retireAge} ${a.locked?'🔒':'🔗'}</small></div><div style="margin-right:10px; font-weight:700;">${dispBal}</div><button class="btn-secondary" style="padding:4px 8px; flex:none;" onclick="editAccount(${i})">Edit</button></div>`;
+    }).join('');
+}
+
 function editAccount(i) {
     const a = accounts[i]; document.getElementById('accName').value = a.name; document.getElementById('accCurr').value = a.currency; document.getElementById('accBal').value = a.balance; document.getElementById('accRetireAge').value = a.retireAge; document.getElementById('accMonthly').value = a.monthly; document.getElementById('accLocked').checked = a.locked; document.getElementById('editIndex').value = i; document.getElementById('eventsListUI').innerHTML = '';
     if (a.events) a.events.forEach(e => addEventInputUI(e.name, e.amount, e.age)); toggleSection('formContent');
