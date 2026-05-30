@@ -324,6 +324,7 @@ function calculate() {
     document.getElementById('chartCard').style.display = 'block'; document.getElementById('tableContainer').style.display = 'block';
     renderGrowthChart(labels, nomPotData.map(toDisplayCurrency), realPotData.map(toDisplayCurrency), nomIncData.map(toDisplayCurrency), realIncData.map(toDisplayCurrency), floorData.map(toDisplayCurrency), histData.map(h => h ? toDisplayCurrency(h) : null));
     updateTotalHeader();
+    updateList();
 }
 
 function saveAccount() {
